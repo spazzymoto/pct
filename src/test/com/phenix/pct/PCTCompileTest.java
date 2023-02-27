@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -38,7 +39,9 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.google.common.io.LineProcessor;
 import com.google.gson.Gson;
-import com.phenix.pct.RCodeInfo.InvalidRCodeException;
+
+import eu.rssw.pct.RCodeInfo;
+import eu.rssw.pct.RCodeInfo.InvalidRCodeException;
 
 /**
  * Class for testing PCTCompile task
@@ -525,7 +528,7 @@ public class PCTCompileTest extends BuildFileTestNg {
     }
 
     @Test(groups = {"v11"})
-    public void test34() throws IOException, InvalidRCodeException {
+    public void test34() throws IOException {
         configureProject(BASEDIR + "test34/build.xml");
         executeTarget("test");
 
@@ -553,23 +556,23 @@ public class PCTCompileTest extends BuildFileTestNg {
 
         File crc = new File(BASEDIR + "test35/build/.pct/test.p.crc");
         assertTrue(crc.exists());
-        String line = Files.readFirstLine(crc, Charset.defaultCharset());
+        String line = Files.asCharSource(crc, Charset.defaultCharset()).readFirstLine();
         assertTrue(line.startsWith("\"sports2000.Item\""));
         File inc = new File(BASEDIR + "test35/build/.pct/test.p.inc");
         assertTrue(inc.exists());
 
         LineProcessor<Boolean> lineProcessor = new Test35LineProcessor();
-        Files.readLines(inc, Charset.defaultCharset(), lineProcessor);
+        Files.asCharSource(inc, Charset.defaultCharset()).readLines(lineProcessor);
         assertTrue(lineProcessor.getResult());
 
         File crc2 = new File(BASEDIR + "test35/build2/.pct/test.p.crc");
         assertTrue(crc2.exists());
-        String line2 = Files.readFirstLine(crc2, Charset.defaultCharset());
+        String line2 = Files.asCharSource(crc2, Charset.defaultCharset()).readFirstLine();
         assertTrue(line2.startsWith("\"sports2000.Item\""));
         File inc2 = new File(BASEDIR + "test35/build2/.pct/test.p.inc");
         assertTrue(inc2.exists());
         LineProcessor<Boolean> lineProcessor2 = new Test35LineProcessor();
-        Files.readLines(inc2, Charset.defaultCharset(), lineProcessor2);
+        Files.asCharSource(inc2, Charset.defaultCharset()).readLines(lineProcessor2);
         assertTrue(lineProcessor2.getResult());
     }
 
@@ -1078,17 +1081,24 @@ public class PCTCompileTest extends BuildFileTestNg {
         assertTrue(new File(BASEDIR + "test66/build-v6underline/v9.r").exists());
         assertTrue(new File(BASEDIR + "test66/build-v6revvideo/v9.r").exists());
 
-        RCodeInfo rci0 = new RCodeInfo(new File(BASEDIR + "test66/build/v9.r"));
-        RCodeInfo rci1 = new RCodeInfo(new File(BASEDIR + "test66/build/v6.r"));
-        RCodeInfo rci2 = new RCodeInfo(new File(BASEDIR + "test66/build-v6/v9.r"));
+        RCodeInfo rci0 = new RCodeInfo(
+                new FileInputStream(new File(BASEDIR + "test66/build/v9.r")));
+        RCodeInfo rci1 = new RCodeInfo(
+                new FileInputStream(new File(BASEDIR + "test66/build/v6.r")));
+        RCodeInfo rci2 = new RCodeInfo(
+                new FileInputStream(new File(BASEDIR + "test66/build-v6/v9.r")));
         assertEquals(rci1.getRCodeSize(), rci2.getRCodeSize());
 
-        RCodeInfo rci3 = new RCodeInfo(new File(BASEDIR + "test66/build/ul.r"));
-        RCodeInfo rci4 = new RCodeInfo(new File(BASEDIR + "test66/build-v6underline/v9.r"));
+        RCodeInfo rci3 = new RCodeInfo(
+                new FileInputStream(new File(BASEDIR + "test66/build/ul.r")));
+        RCodeInfo rci4 = new RCodeInfo(
+                new FileInputStream(new File(BASEDIR + "test66/build-v6underline/v9.r")));
         assertEquals(rci3.getRCodeSize(), rci4.getRCodeSize());
 
-        RCodeInfo rci5 = new RCodeInfo(new File(BASEDIR + "test66/build/rv.r"));
-        RCodeInfo rci6 = new RCodeInfo(new File(BASEDIR + "test66/build-v6revvideo/v9.r"));
+        RCodeInfo rci5 = new RCodeInfo(
+                new FileInputStream(new File(BASEDIR + "test66/build/rv.r")));
+        RCodeInfo rci6 = new RCodeInfo(
+                new FileInputStream(new File(BASEDIR + "test66/build-v6revvideo/v9.r")));
         assertEquals(rci5.getRCodeSize(), rci6.getRCodeSize());
 
         assertNotEquals(rci0.getRCodeSize(), rci1.getRCodeSize());
@@ -1390,7 +1400,8 @@ public class PCTCompileTest extends BuildFileTestNg {
         assertTrue(f3.exists());
 
         try {
-            assertTrue(Files.readLines(f3, Charset.defaultCharset(), new Test80LineProcessor()));
+            assertTrue(Files.asCharSource(f3, Charset.defaultCharset())
+                    .readLines(new Test80LineProcessor()));
         } catch (IOException caught) {
             fail("Unable to read file", caught);
         }
@@ -1574,28 +1585,32 @@ public class PCTCompileTest extends BuildFileTestNg {
 
         LineProcessor<Integer> proc = new Test86LineProcessor();
         try {
-            Files.readLines(new File(dir, ".pct/eu/rssw/pct/Y.cls.hierarchy"), Charset.defaultCharset(), proc);
+            Files.asCharSource(new File(dir, ".pct/eu/rssw/pct/Y.cls.hierarchy"),
+                    Charset.defaultCharset()).readLines(proc);
         } catch (IOException caught) {
             fail("Unable to read file", caught);
         }
         assertEquals(proc.getResult(), Integer.valueOf(1));
         LineProcessor<Integer> proc2 = new Test86LineProcessor();
         try {
-            Files.readLines(new File(dir, ".pct/eu/rssw/pct/Z.cls.hierarchy"), Charset.defaultCharset(), proc2);
+            Files.asCharSource(new File(dir, ".pct/eu/rssw/pct/Z.cls.hierarchy"),
+                    Charset.defaultCharset()).readLines(proc2);
         } catch (IOException caught) {
             fail("Unable to read file", caught);
         }
         assertEquals(proc2.getResult(), Integer.valueOf(4));
         LineProcessor<Integer> proc3 = new Test86LineProcessor();
         try {
-            Files.readLines(new File(dir, ".pct/eu/rssw/pct/M.cls.hierarchy"), Charset.defaultCharset(), proc3);
+            Files.asCharSource(new File(dir, ".pct/eu/rssw/pct/M.cls.hierarchy"),
+                    Charset.defaultCharset()).readLines(proc3);
         } catch (IOException caught) {
             fail("Unable to read file", caught);
         }
         assertEquals(proc3.getResult(), Integer.valueOf(1));
         LineProcessor<Integer> proc4 = new Test86LineProcessor();
         try {
-            Files.readLines(new File(dir, ".pct/eu/rssw/pct/proc.p.hierarchy"), Charset.defaultCharset(), proc4);
+            Files.asCharSource(new File(dir, ".pct/eu/rssw/pct/proc.p.hierarchy"),
+                    Charset.defaultCharset()).readLines(proc4);
         } catch (IOException caught) {
             fail("Unable to read file", caught);
         }
@@ -1642,6 +1657,74 @@ public class PCTCompileTest extends BuildFileTestNg {
         assertFalse(f1.exists());
         File f2 = new File(BASEDIR + "test88/build/test2.r");
         assertTrue(f2.exists());
+    }
+
+    @Test(groups = {"v11"})
+    public void test89() throws IOException {
+        configureProject(BASEDIR + "test89/build.xml");
+
+        // Compile everything
+        Files.copy(new File(BASEDIR + "test89/src/inc/ttTable1.i"),
+                new File(BASEDIR + "test89/src/inc/ttTable-comp.i"));
+        executeTarget("test");
+
+        // Save the last modified date of our child class
+        File f1 = new File(BASEDIR + "test89/build/cls/someChildClass.r");
+        long lastModTime = f1.lastModified();
+
+        // Do an incremental compile with a new include for the parent class
+        // This would have previously skipped compiling the child class because the child was only
+        // checking if the
+        // parent class had changed and not whether an include referenced by the parent class
+        // changed.
+        // The child class needs to be compiled since it references a table from an include in the
+        // parent class.
+        Files.copy(new File(BASEDIR + "test89/src/inc/ttTable2.i"),
+                new File(BASEDIR + "test89/src/inc/ttTable-comp.i"));
+        executeTarget("test");
+        assertNotEquals(f1.lastModified(), lastModTime);
+    }
+
+    @Test(groups = {"v11"}, enabled = false)
+    public void test90() throws IOException {
+        configureProject(BASEDIR + "test90/build.xml");
+        executeTarget("init");
+        executeTarget("test01");
+        assertTrue(new File(BASEDIR, "test90/build01/test01.r").exists());
+        executeTarget("test02");
+        assertTrue(new File(BASEDIR, "test90/build02/test01.r").exists());
+        executeTarget("test03");
+        assertTrue(new File(BASEDIR, "test90/build03/test01.r").exists());
+    }
+
+    @Test(groups = {"v11"})
+    public void test91() throws IOException {
+        configureProject(BASEDIR + "test91/build.xml");
+        executeTarget("build");
+        assertTrue(new File(BASEDIR, "test91/build/src/test1.r").exists());
+        assertTrue(new File(BASEDIR, "test91/build/src/test2.r").exists());
+
+        // Check that source files are not overwritten by preprocessor
+        List<String> lines01 = Files.readLines(new File(BASEDIR, "test91/src/test1.p"),
+                Charset.defaultCharset());
+        assertTrue(lines01.stream().filter(it -> it.trim().length() > 0).count() > 0);
+        List<String> lines02 = Files.readLines(new File(BASEDIR, "test91/src/test2.p"),
+                Charset.defaultCharset());
+        assertTrue(lines02.stream().filter(it -> it.trim().length() > 0).count() > 0);
+    }
+
+    @Test(groups = {"v11"})
+    public void test92() throws IOException {
+        configureProject(BASEDIR + "test92/build.xml");
+        executeTarget("init");
+        expectBuildException("test1", "No passphrase");
+        if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
+            executeTarget("test3-win");
+        } else {
+            executeTarget("test3-unix");
+        }
+        assertTrue(new File(BASEDIR, "test92/build3/customer.r").exists());
+        assertTrue(new File(BASEDIR, "test92/build3/item.r").exists());
     }
 
     static final class Test80LineProcessor implements LineProcessor<Boolean> {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.Map;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -50,11 +49,6 @@ public class BackgroundWorkerTest {
         @Override
         protected boolean performCustomAction() throws IOException {
             return false;
-        }
-
-        @Override
-        public void setCustomOptions(Map<String, String> options) {
-            
         }
 
         @Override

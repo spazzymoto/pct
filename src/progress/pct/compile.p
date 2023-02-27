@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2019 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  */
 
 /* Callbacks are only supported on 11.3+ */
- &IF DECIMAL(SUBSTRING(PROVERSION, 1, INDEX(PROVERSION, '.') + 1)) GE 11.3 &THEN
+&IF DECIMAL(SUBSTRING(PROVERSION, 1, INDEX(PROVERSION, '.') + 1)) GE 11.3 &THEN
  USING Progress.Lang.Class.
- &ENDIF
+&ENDIF
  USING Progress.Json.ObjectModel.*.
 
 &IF INTEGER(SUBSTRING(PROVERSION, 1, INDEX(PROVERSION, '.'))) GE 11 &THEN
@@ -169,7 +169,7 @@ DEFINE VARIABLE compileAction AS INTEGER NO-UNDO.
 ASSIGN compileAction = 0.
 &ENDIF
 
-PROCEDURE setOption.
+PROCEDURE setOption:
   DEFINE INPUT PARAMETER ipName  AS CHARACTER NO-UNDO.
   DEFINE INPUT PARAMETER ipValue AS CHARACTER NO-UNDO.
 
@@ -262,7 +262,7 @@ PROCEDURE initModule:
   IF lOptRetVals THEN
     ASSIGN cOpts = cOpts + (IF cOpts EQ '' THEN '' ELSE ',') + 'require-return-values' + (IF bAboveEq1173 THEN ':warning' ELSE '').
 &IF INTEGER(SUBSTRING(PROVERSION, 1, INDEX(PROVERSION, '.'))) GE 11 &THEN
-  IF (COMPILER:OPTIONS GT "":U) THEN DO:
+  IF bAboveEq117 AND (COMPILER:OPTIONS GT "":U) THEN DO:
     MESSAGE "PCT compiler options are overridden by COMPILER:OPTIONS".
     ASSIGN cOpts = COMPILER:OPTIONS.
   END.
@@ -295,7 +295,7 @@ FUNCTION getRecompileLabel RETURNS CHARACTER (ipVal AS INTEGER):
   END.
 END FUNCTION.
 
-PROCEDURE compileXref.
+PROCEDURE compileXref:
   DEFINE INPUT  PARAMETER ipInDir   AS CHARACTER  NO-UNDO. /* Fileset. Never null */
   DEFINE INPUT  PARAMETER ipInFile  AS CHARACTER  NO-UNDO. /* Path relative to fileset. Never null */
   DEFINE INPUT  PARAMETER ipOutFile AS CHARACTER  NO-UNDO. /* Path relative to pcOutDir. Can be null, in this case, the default rcode name */
@@ -427,6 +427,11 @@ PROCEDURE compileXref.
   END.
   ELSE
     ASSIGN preprocessFile = ?.
+  // Check we don't overwrite source file (as preprocess file name doesn't use specific extension)
+  IF ((ipInDir + '/':U + ipInFile) = preprocessFile) THEN DO:
+    MESSAGE SUBSTITUTE("Preprocessor disabled for &1 as it would overwrite source file", preprocessFile).
+    preprocessFile = ?.
+  END.
 
   IF debugLst AND NOT (cFile BEGINS '_') THEN DO:
     IF flattenDbg THEN
@@ -578,7 +583,7 @@ PROCEDURE compileXref.
 
 END PROCEDURE.
 
-PROCEDURE printErrorsWarningsJson.
+PROCEDURE printErrorsWarningsJson:
 
   DEFINE INPUT PARAMETER iCompOK AS INTEGER NO-UNDO.
   DEFINE INPUT PARAMETER iCompFail AS INTEGER NO-UNDO.
@@ -658,7 +663,7 @@ PROCEDURE displayCompileErrors PRIVATE:
 
 END PROCEDURE.
 
-PROCEDURE importXmlXref.
+PROCEDURE importXmlXref:
   DEFINE INPUT  PARAMETER pcXref AS CHARACTER NO-UNDO.
   DEFINE INPUT  PARAMETER pcDir  AS CHARACTER NO-UNDO.
   DEFINE INPUT  PARAMETER pcFile AS CHARACTER NO-UNDO.
@@ -759,7 +764,7 @@ PROCEDURE importXmlXref.
 
 END PROCEDURE.
 
-PROCEDURE importXref PRIVATE.
+PROCEDURE importXref PRIVATE:
   DEFINE INPUT  PARAMETER pcXref AS CHARACTER NO-UNDO.
   DEFINE INPUT  PARAMETER pcDir  AS CHARACTER NO-UNDO.
   DEFINE INPUT  PARAMETER pcFile AS CHARACTER NO-UNDO.
@@ -997,7 +1002,7 @@ FUNCTION checkHierarchy RETURNS LOGICAL (INPUT f AS CHARACTER, INPUT ts AS DATET
              TimeStamps.ttFullPath = SEARCH(REPLACE(clsName, '.', '/') + '.cls').
       ASSIGN TimeStamps.ttMod = getTimeStampF(TimeStamps.ttFullPath).
     END.
-    IF ((TimeStamps.ttFullPath NE clsFullPath) OR (ts LT TimeStamps.ttMod)) AND (TimeStamps.ttExcept EQ FALSE) THEN DO:
+    IF ((TimeStamps.ttFullPath NE clsFullPath) OR (ts LT TimeStamps.ttMod) OR CheckIncludes(REPLACE(clsName, '.', '/') + '.cls', ts, d)) AND (TimeStamps.ttExcept EQ FALSE) THEN DO:
       ASSIGN lReturn = TRUE.
       LEAVE FileList.
     END.

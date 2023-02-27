@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -62,11 +62,6 @@ public class PCTDynamicRun extends PCTRun {
         throw new UnsupportedOperationException("No -ininame attribute in this mode");
     }
 
-    @Override
-    public void setMainCallback(String mainCallback) {
-        throw new UnsupportedOperationException("No callback attribute in this mode");
-    }
-
     private void writeJsonConfigFile() throws IOException {
         try (JsonWriter writer = new JsonWriter(new FileWriter(jsonConfig))) {
             writer.beginObject();
@@ -74,6 +69,7 @@ public class PCTDynamicRun extends PCTRun {
             writer.name("super").value(runAttributes.isSuperInit());
             writer.name("procedure").value(runAttributes.getProcedure());
             writer.name("returnValue").value(status.getAbsolutePath());
+            writer.name("callback").value(runAttributes.getMainCallback());
             writer.name("propath").beginArray();
 
             String[] lst = runAttributes.getPropath() == null ? new String[]{"."} : runAttributes.getPropath().list();
@@ -98,6 +94,12 @@ public class PCTDynamicRun extends PCTRun {
             for (PCTConnection dbc : runAttributes.getAllDbConnections()) {
                 writer.beginObject();
                 writer.name("connect").value(dbc.createConnectString());
+                if (dbc.hasCmdLinePassphrase()) {
+                    writer.name("passphrase").value("cmdline");
+                    writer.name("cmd").value(dbc.getPassphraseCmdLine());
+                } else {
+                    writer.name("passphrase").value("none");
+                }
                 writer.name("aliases").beginArray();
 
                 Collection<PCTAlias> aliases = dbc.getAliases();

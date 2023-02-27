@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -221,8 +221,21 @@ public class PCTLoadSchemaTest extends BuildFileTestNg {
 
     @Test(groups = { "v11" })
     public void test15() {
-      // Empty schema, we shouldn't fail
-      configureProject("PCTLoadSchema/test15/build.xml");
-      executeTarget("base");
+        // Empty schema, we shouldn't fail
+        configureProject("PCTLoadSchema/test15/build.xml");
+        executeTarget("base");
     }
- }
+
+    @Test(groups = {"v12"})
+    public void test16() {
+        // Only work with 12.4+
+        DLCVersion version = DLCVersion.getObject(new File(System.getProperty("DLC")));
+        if ((version.getMajorVersion() == 12) && (version.getMinorVersion() <= 3))
+            return;
+
+        configureProject("PCTLoadSchema/test16/build.xml");
+        executeTarget("prepare");
+        executeTarget("load");
+        executeTarget("test");
+    }
+}

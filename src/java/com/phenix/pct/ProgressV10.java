@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -71,6 +71,11 @@ public class ProgressV10 implements ProgressProcedures {
     @Override
     public String getConnectString() {
         return getString("ProgressV10.1"); //$NON-NLS-1$
+    }
+
+    @Override
+    public String getConnectPassphraseCmdLineString() {
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override

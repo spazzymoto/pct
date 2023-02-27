@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  */
 package com.phenix.pct;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -33,7 +34,7 @@ import org.testng.annotations.Test;
 
 /**
  * Class for testing PCTDumpIncremental task Assertion - following classes should work properly :
- * PCTCreateBase PCTCompile PCTLoadSchema
+ * PCTCreateDatabase PCTCompile PCTLoadSchema
  * 
  * @author <a href="mailto:g.querret+PCT@gmail.com">Gilles QUERRET</a>
  */
@@ -245,6 +246,52 @@ public class PCTDumpIncrementalTest extends BuildFileTestNg {
         assertTrue(f1.exists());
         assertTrue(f2.exists());
         assertTrue(f1.length() > f2.length());
+    }
+
+    /**
+     * Test renameFile attribute on tables
+     */
+    @Test(groups= {"v12"})
+    public void test9() {
+        // Only work with 12.4+
+        DLCVersion version = DLCVersion.getObject(new File(System.getProperty("DLC")));
+        if ((version.getMajorVersion() == 12) && (version.getMinorVersion() <= 3))
+            return;
+
+        configureProject("PCTDumpIncremental/test9/build.xml");
+        executeTarget("base");
+        executeTarget("test");
+
+        File f1 = new File("PCTDumpIncremental/test9/incr/incremental1.df");
+        File f2 = new File("PCTDumpIncremental/test9/incr/incremental2.df");
+        assertTrue(f1.exists());
+        assertTrue(f2.exists());
+        assertTrue(f1.length() < f2.length());
+    }
+
+    @Test(groups = {"v11"})
+    public void test10() {
+        configureProject("PCTDumpIncremental/test10/build.xml");
+        executeTarget("base");
+        executeTarget("test01");
+        executeTarget("test04");
+
+        File f1 = new File("PCTDumpIncremental/test10/incr01.df");
+        assertTrue(f1.exists());
+        assertTrue(f1.length() > 0);
+        File f2 = new File("PCTDumpIncremental/test10/incr04.df");
+        assertTrue(f2.exists());
+        assertEquals(f2.length(), f1.length());
+
+        expectBuildException("test02", "Encryption");
+        assertTrue(searchInList(getLogBuffer(), "Source db does not have encryption enabled"));
+        File f3 = new File("PCTDumpIncremental/test10/incr02.df");
+        assertEquals(f3.length(), 0);
+
+        expectBuildException("test03", "Encryption");
+        assertTrue(searchInList(getLogBuffer(), "The target database does not have encryption enabled."));
+        File f4 = new File("PCTDumpIncremental/test10/incr03.df");
+        assertEquals(f4.length(), 0);
     }
 
 }

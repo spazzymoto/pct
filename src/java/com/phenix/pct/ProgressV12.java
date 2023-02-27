@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class ProgressV12 implements ProgressProcedures {
 
     @Override
     public String getDynamicRunProcedure() {
-        return "pct/v12/dynrun.p";
+        return "pct/dynrun.p";
     }
 
     @Override
@@ -76,6 +76,11 @@ public class ProgressV12 implements ProgressProcedures {
     @Override
     public String getConnectString() {
         return getString("ProgressV12.1"); //$NON-NLS-1$
+    }
+
+    @Override
+    public String getConnectPassphraseCmdLineString() {
+        return getString("ProgressV12.17"); //$NON-NLS-1$
     }
 
     @Override

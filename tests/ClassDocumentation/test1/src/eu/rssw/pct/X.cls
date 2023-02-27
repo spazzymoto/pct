@@ -2,17 +2,23 @@ using Progress.Lang.*.
 
 { eu/rssw/pct/inc.i }
 
-/* Class comment
+/**
+ * Class comment
  * <a href="test">Some text in an anchor</a>*/
  
 class eu.rssw.pct.X serializable use-widget-pool:
-  /* Public property foo1 */
+  /**
+   Public property foo1 
+   */
   define public property foo1 as char get. set.
-  /* Public property foo2 */
+  /**
+  
+   Public property foo2 
+   */
   define protected property foo2 as char get. set.
   define private property foo3 as class eu.rssw.pct.X get. set.
-  define property foo4 as char.
-  define public static property foo5 as char.
+  define property foo4 as char get.
+  define public static property foo5 as char get.
 
   define temp-table tt1 no-undo
     field fld1 as char
@@ -20,6 +26,11 @@ class eu.rssw.pct.X serializable use-widget-pool:
     field fld3 as dec
     field fld4 as logical
     index idx1 is primary unique fld1 fld2.
+  /**
+   * Comment on a temp-table
+   *
+   * Another line
+   */
   define temp-table tt3 no-undo like tt1
     field fld5 like tt1.fld1.
 
@@ -46,11 +57,11 @@ class eu.rssw.pct.X serializable use-widget-pool:
   
   end method.
   
-  /* 
+  /** 
    * Comment for method 2
    * @return void
    */
-  method public void method2() : 
+  method public void method4() :
     /* My second comment */
   end method.
   

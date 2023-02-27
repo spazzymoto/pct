@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@ package com.phenix.pct;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.phenix.pct.RCodeInfo.InvalidRCodeException;
+import eu.rssw.pct.RCodeInfo;
+import eu.rssw.pct.RCodeInfo.InvalidRCodeException;
 
 public class DLCVersion implements Comparable<DLCVersion> {
     public static final DLCVersion UNKNOWN_VERSION = new DLCVersion(0, 0, "");
@@ -36,6 +38,7 @@ public class DLCVersion implements Comparable<DLCVersion> {
     private final int majorVersion;
     private final int minorVersion;
     private final String fullVersion;
+    private final String shortVersion;
     private final String maintenanceVersion;
     private final String patchVersion;
     private final String date;
@@ -53,10 +56,12 @@ public class DLCVersion implements Comparable<DLCVersion> {
         this.rCodeVersion = -1;
         this.arch = false;
         this.fullVersion = major + "." + minor + maintenance;
+        this.shortVersion = fullVersion;
     }
 
     private DLCVersion(Builder builder) {
         fullVersion = builder.fullVersion;
+        shortVersion = builder.shortVersion;
         date = builder.date;
         majorVersion = builder.major;
         minorVersion = builder.minor;
@@ -97,6 +102,7 @@ public class DLCVersion implements Comparable<DLCVersion> {
         Matcher m = Pattern.compile(MAIN_PATTERN).matcher(str);
         if (m.matches()) {
             builder.fullVersion = m.group(0);
+            builder.shortVersion = m.group(1);
             builder.date = m.group(3);
             builder.major = Integer.parseInt(m.group(2));
             if (builder.major >= 11)
@@ -110,7 +116,7 @@ public class DLCVersion implements Comparable<DLCVersion> {
 
     private static void readArch(Builder builder, File prostart) throws IOException {
         try {
-            RCodeInfo rci = new RCodeInfo(prostart);
+            RCodeInfo rci = new RCodeInfo(new FileInputStream(prostart));
             builder.rCodeVersion = rci.getVersion();
             builder.arch = rci.is64bits();
         } catch (InvalidRCodeException caught) {
@@ -150,6 +156,10 @@ public class DLCVersion implements Comparable<DLCVersion> {
 
     public String getFullVersion() {
         return fullVersion;
+    }
+
+    public String getShortVersion() {
+        return shortVersion;
     }
 
     public int getMajorVersion() {
@@ -199,6 +209,7 @@ public class DLCVersion implements Comparable<DLCVersion> {
         int major;
         int minor;
         String fullVersion;
+        String shortVersion;
         String maintenance;
         String patch;
         String date;
@@ -230,9 +241,16 @@ public class DLCVersion implements Comparable<DLCVersion> {
     @Override
     public int compareTo(DLCVersion other) {
         if ((majorVersion - other.majorVersion) != 0)
-            return (majorVersion - other.majorVersion);
+            return majorVersion - other.majorVersion;
         if ((minorVersion - other.minorVersion) != 0)
-            return (minorVersion - other.minorVersion);
-        return maintenanceVersion.compareTo(other.maintenanceVersion);
+            return minorVersion - other.minorVersion;
+        try {
+            // First, try to compare numeric values ; if not applicable, try string comparison
+            int maint = Integer.parseInt(maintenanceVersion);
+            int otherMaint = Integer.parseInt(other.maintenanceVersion);
+            return maint - otherMaint;
+        } catch (NumberFormatException uncaught) {
+            return maintenanceVersion.compareTo(other.maintenanceVersion);
+        }
     }
 }

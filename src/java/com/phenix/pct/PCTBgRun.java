@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,18 +16,6 @@
  */
 package com.phenix.pct;
 
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.taskdefs.ExecTask;
-import org.apache.tools.ant.taskdefs.Parallel;
-import org.apache.tools.ant.types.Environment;
-import org.apache.tools.ant.types.Environment.Variable;
-import org.apache.tools.ant.types.FileList;
-import org.apache.tools.ant.types.Path;
-import org.apache.tools.ant.util.FileUtils;
-
-import com.phenix.pct.BackgroundWorker.Message;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,6 +28,20 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.taskdefs.ExecTask;
+import org.apache.tools.ant.taskdefs.Parallel;
+import org.apache.tools.ant.types.Environment;
+import org.apache.tools.ant.types.Environment.Variable;
+import org.apache.tools.ant.types.FileList;
+import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.util.FileUtils;
+
+import com.phenix.pct.BackgroundWorker.Message;
 
 /**
  * Run a background Progress procedure.
@@ -47,12 +49,15 @@ import java.util.List;
  * @author <a href="mailto:g.querret+PCT@gmail.com">Gilles QUERRET</a>
  */
 public abstract class PCTBgRun extends PCT implements IRunAttributes {
+    private static final long DEFAULT_TIMEOUT = 30L * 60L; // 30 minutes
+
     protected Path internalPropath = null;
 
     // Attributes
     private int numThreads = 1;
     private GenericExecuteOptions options;
-    
+    private long timeout = DEFAULT_TIMEOUT;
+
     // Internal use : throw BuildException
     private boolean buildException;
     private Throwable buildExceptionSource;
@@ -71,7 +76,7 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
         super();
 
         options = new GenericExecuteOptions(this);
-        options.setProcedure("pct/_server.p");
+        options.setProcedure("pct/server.p");
 
         // Nom de la PL à créer
         plID = PCT.nextRandomInt();
@@ -82,7 +87,7 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
 
     protected void setRunAttributes(GenericExecuteOptions attrs) {
         this.options = attrs;
-        options.setProcedure("pct/_server.p");
+        options.setProcedure("pct/server.p");
     }
 
     /**
@@ -339,6 +344,10 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
         this.numThreads = numThreads;
     }
 
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
+    }
+
     public GenericExecuteOptions getOptions() {
         return options;
     }
@@ -471,24 +480,7 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
         if (charset != null) {
             return charset;
         }
-
-        String zz = readCharset();
-        try {
-            if (zz != null) {
-                if ("1252".equals(zz))
-                    zz = "windows-1252";
-                if ("big-5".equalsIgnoreCase(zz))
-                    zz = "Big5";
-                charset = Charset.forName(zz);
-            }
-        } catch (IllegalArgumentException caught) {
-            log(MessageFormat.format(Messages.getString("PCTCompile.46"), zz), Project.MSG_INFO); //$NON-NLS-1$
-            charset = Charset.defaultCharset();
-        }
-        if (charset == null) {
-            log(Messages.getString("PCTCompile.47"), Project.MSG_VERBOSE); //$NON-NLS-1$
-            charset = Charset.defaultCharset();
-        }
+        charset = getCharset(readCharset());
 
         return charset;
     }
@@ -648,9 +640,8 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
      * Listener thread
      */
     private class ListenerThread extends Thread {
-        // Timeout for accept method -- 5 seconds should be enough
-        // Increase it if you're doing some debugging
-        private static final int TIMEOUT = 5000;
+        // Timeout for accept method -- 30 seconds should be enough.
+        private static final int TIMEOUT = 30000;
 
         private ServerSocket server = null;
 
@@ -669,50 +660,38 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
          */
         @Override
         public void run() {
-            int acceptedThreads = 0;
-            int deadThreads = 0;
-            ThreadGroup group = new ThreadGroup("PCT");
-
-            while (acceptedThreads + deadThreads < numThreads) {
-                try {
-                    final Socket socket = server.accept();
+            ExecutorService group = Executors.newFixedThreadPool(numThreads);
+            for (int zz = 0; zz < numThreads; zz++) {
+                group.execute(() -> {
+                    final Socket socket;
+                    try {
+                        socket = server.accept();
+                    } catch (IOException caught) {
+                        setBuildException(caught);
+                        return;
+                    }
                     final BackgroundWorker status = createOpenEdgeWorker(socket);
                     status.setDBConnections(options.getDBConnections().iterator());
                     status.setAliases(options.getAliases().iterator());
                     status.setPropath(getPropathAsList().iterator());
-                    status.setCustomOptions(null); // TODO
 
-                    Runnable r = new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                while (!status.quit) {
-                                    status.performAction();
-                                    status.listen();
-                                }
-                            } catch (IOException caught) {
-                                setBuildException(caught);
-                            }
+                    try {
+                        while (!status.quit) {
+                            status.performAction();
+                            status.listen();
                         }
-                    };
-                    new Thread(group, r).start();
-                    acceptedThreads++;
-                } catch (IOException caught) {
-                    // Thrown by accept(), so process didn't reach the listener
-                    deadThreads++;
-                    setBuildException(caught);
-                }
-            }
-            try {
-                synchronized (group) {
-                    while (group.activeCount() > 0) {
-                        group.wait();
+                    } catch (IOException caught) {
+                        setBuildException(caught);
                     }
-                }
+                });
+            }
+            group.shutdown();
+            try {
+                group.awaitTermination(timeout, TimeUnit.SECONDS);
             } catch (InterruptedException caught) {
                 setBuildException(caught);
+                Thread.currentThread().interrupt();
             }
-
         }
     }
 }

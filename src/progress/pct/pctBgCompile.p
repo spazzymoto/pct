@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2019 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ PROCEDURE setOptions:
     RUN setOption IN hComp ('RUNLIST', IF ENTRY(1, ipPrm, ';') EQ 'true' THEN '1' ELSE '0').
     RUN setOption IN hComp ('XCODE', IF ENTRY(4, ipPrm, ';') EQ 'true' THEN '1' ELSE '0').
     RUN setOption IN hComp ('FORCECOMPILE', IF ENTRY(6, ipPrm, ';') EQ 'true' THEN '1' ELSE '0').
-    RUN setOption IN hComp ('NOCOMPILE', IF ENTRY(7, ipPrm, ';') EQ 'true' THEN '1' ELSE '0').
     RUN setOption IN hComp ('KEEPXREF', IF ENTRY(8, ipPrm, ';') EQ 'true' THEN '1' ELSE '0').
     RUN setOption IN hComp ('MULTICOMPILE', IF ENTRY(11, ipPrm, ';') EQ 'true' THEN '1' ELSE '0').
     RUN setOption IN hComp ('RELATIVE', IF ENTRY(14, ipPrm, ';') EQ 'true' THEN '1' ELSE '0').
@@ -118,35 +117,35 @@ PROCEDURE pctCompile:
 
 END PROCEDURE.
 
-PROCEDURE logError.
+PROCEDURE logError:
   DEFINE INPUT PARAMETER ipMsg AS CHARACTER NO-UNDO.
 
   RUN logError IN hSrcProc (ipMsg).
 
 END PROCEDURE.
 
-PROCEDURE logWarning.
+PROCEDURE logWarning:
   DEFINE INPUT PARAMETER ipMsg AS CHARACTER NO-UNDO.
 
   RUN logWarning IN hSrcProc (ipMsg).
 
 END PROCEDURE.
 
-PROCEDURE logInfo.
+PROCEDURE logInfo:
   DEFINE INPUT PARAMETER ipMsg AS CHARACTER NO-UNDO.
 
   RUN logInfo IN hSrcProc (ipMsg).
 
 END PROCEDURE.
 
-PROCEDURE logVerbose.
+PROCEDURE logVerbose:
   DEFINE INPUT PARAMETER ipMsg AS CHARACTER NO-UNDO.
 
   RUN logVerbose IN hSrcProc (ipMsg).
 
 END PROCEDURE.
 
-PROCEDURE logDebug.
+PROCEDURE logDebug:
   DEFINE INPUT PARAMETER ipMsg AS CHARACTER NO-UNDO.
 
   RUN logDebug IN hSrcProc (ipMsg).

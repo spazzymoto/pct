@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ public class AnalyticsBuildListener implements BuildListener {
         return ("DlcVersion".equalsIgnoreCase(task.getTaskType())
                 || "RestGen".equalsIgnoreCase(task.getTaskType())
                 || "ClassDocumentation".equalsIgnoreCase(task.getTaskType())
+                || "JsonDocumentation".equalsIgnoreCase(task.getTaskType())
                 || "ABLDuck".equalsIgnoreCase(task.getTaskType())
                 || "ProUnit".equalsIgnoreCase(task.getTaskType())
                 || "OEUnit".equalsIgnoreCase(task.getTaskType())

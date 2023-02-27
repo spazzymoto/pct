@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -306,11 +305,6 @@ public class PCTBgCompile extends PCTBgRun {
             }
         }
 
-        @Override
-        public void setCustomOptions(Map<String, String> options) {
-            // No-op
-        }
-
         private String getOptions() {
             StringBuilder sb = new StringBuilder();
             sb.append(Boolean.toString(compAttrs.isRunList())).append(';');
@@ -319,7 +313,7 @@ public class PCTBgCompile extends PCTBgRun {
             sb.append(Boolean.toString(compAttrs.isXcode())).append(';');
             sb.append("").append(';');
             sb.append(Boolean.toString(compAttrs.isForceCompile())).append(';');
-            sb.append(Boolean.toString(false /* FIXME noCompile */)).append(';');
+            sb.append(Boolean.toString(false)).append(';'); // Previously noCompile
             sb.append(Boolean.toString(compAttrs.isKeepXref())).append(';');
             sb.append("").append(';'); // Previously languages
             sb.append("").append(';'); // Previously growth factor
@@ -378,6 +372,8 @@ public class PCTBgCompile extends PCTBgRun {
                     if (compAttrs.isStopOnError())
                         setStatusQuit();
                 }
+            } else {
+                logMessages(returnValues);
             }
         }
     }

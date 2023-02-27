@@ -9,7 +9,7 @@
 
   <!-- Only used for OE version number -->
   <taskdef resource="PCT.properties" />
-  <ProgressVersion dlcHome="${DLC}" majorVersion="OE_MAJOR_VERSION" minorVersion="OE_MINOR_VERSION" bitness="OE_ARCH" />
+  <ProgressVersion dlcHome="${DLC}" majorVersion="OE_MAJOR_VERSION" minorVersion="OE_MINOR_VERSION" shortVersion="OE_VERSION" bitness="OE_ARCH" />
 
   <!-- Assume version 12 when in local development -->
   <condition property="GROUPS" value="v11,v12">
@@ -46,11 +46,14 @@
     <fileset dir="lib" includes="testng-6.13.1.jar,jcommander-1.30.jar" />
   </path>
   <path id="jacoco.cp">
-    <fileset dir="lib" includes="jacocoant-0.8.4.jar" />
+    <fileset dir="lib" includes="jacocoant-0.8.7.jar" />
   </path>
 
   <target name="init">
     <unzip src="dist/testcases.zip" dest="." />
+    <touch> <!-- Make sure all timestamps are set to 'now' -->
+      <fileset dir="." />
+    </touch>
     <mkdir dir="testbox/PCTCompileExt" />
     <copy todir="testbox/PCTCompileExt">
       <fileset dir="testbox/PCTCompile" />
@@ -60,6 +63,7 @@
     <replace dir="testbox/PCTCompileExt" includes="test??/build.xml" token="pct:compile" value="pct:compile_ext" />
     <echo message="Using Ant '${ant.version}' in '${ant.home}'" />
     <echo message="Using Java ${ant.java.version} - Java home: ${java.home}" />
+    <echo message="Using OpenEdge ${OE_VERSION}" />
   </target>
 
   <target name="test">
@@ -73,6 +77,8 @@
         <classfileset dir="build/test" includes="**/*Test.class" excludes="**/*BrokerTest.class" />
         <classpath refid="test.run.cp" />
         <jvmarg line="-DDLC=&quot;${DLC}&quot; -DPROFILER=${PROFILER} -DTESTLIBS=${TESTLIBS} -DVERSION=${VERSION}" />
+        <env key="ADMIN_PASSPHRASE" value="Admin#234" />
+        <env key="USER_PASSPHRASE" value="User#234" />
       </testng>
     </jacoco:coverage>
   </target>

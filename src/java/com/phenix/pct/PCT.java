@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,19 +16,23 @@
  */
 package com.phenix.pct;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -105,7 +109,9 @@ public abstract class PCT extends Task {
             throw new BuildException("Unable to read DLC version file in '" + dlcHome.toString() + "'");
         }
 
-        if (version.compareTo(new DLCVersion(12, 1, "0")) >= 0)
+        if (version.compareTo(new DLCVersion(12, 4, "0")) >= 0)
+            this.pp = new ProgressV124();
+        else if (version.compareTo(new DLCVersion(12, 1, "0")) >= 0)
             this.pp = new ProgressV121();
         else if (version.compareTo(new DLCVersion(12, 0, "0")) >= 0)
             this.pp = new ProgressV12();
@@ -559,12 +565,12 @@ public abstract class PCT extends Task {
     }
 
     /**
-     * Returns reduced version
+     * Returns short version
      * 
      * @return 10.0B02 for example
      */
-    protected String getReducedVersion() {
-        return version.getFullVersion();
+    protected String getShortVersion() {
+        return version.getShortVersion();
     }
 
     /**
@@ -587,7 +593,7 @@ public abstract class PCT extends Task {
         return version;
     }
 
-    public int getAntLoggerLever() {
+    public int getAntLoggerLevel() {
         try {
             List<BuildListener> listeners = getProject().getBuildListeners();
             for (BuildListener listener : listeners) {
@@ -602,6 +608,44 @@ public abstract class PCT extends Task {
         } catch (Exception e) {
             // if unable to determine level - just return default value
             return 2;
+        }
+    }
+
+    /**
+     * Returns charset to be used when writing files in Java to be read by Progress session (thus
+     * according to cpstream, parameter files, ...) and dealing with OE encodings (such as undefined
+     * or 1252)
+     */
+    protected Charset getCharset(String zz) {
+        if ("1250".equals(zz)) // Central Europe
+            zz = "windows-1250";
+        else if ("1251".equals(zz)) // Cyrillic
+            zz = "windows-1251";
+        else if ("1252".equals(zz)) // Western Europe
+            zz = "windows-1252";
+        else if ("1253".equals(zz)) // Greek
+            zz = "windows-1253";
+        else if ("1254".equals(zz)) // Turkish
+            zz = "windows-1254";
+        else if ("1255".equals(zz)) // Hebrew
+            zz = "windows-1255";
+        else if ("1256".equals(zz)) // Arabic
+            zz = "windows-1256";
+        else if ("1257".equals(zz)) // Baltic
+            zz = "windows-1257";
+        else if ("1258".equals(zz)) // Vietnamese
+            zz = "windows-1258";
+        else if ("big-5".equalsIgnoreCase(zz))
+            zz = "Big5";
+        try {
+            if (zz == null) {
+                log(Messages.getString("PCTCompile.47"), Project.MSG_VERBOSE); //$NON-NLS-1$
+                return Charset.defaultCharset();
+            }
+            return Charset.forName(zz);
+        } catch (IllegalArgumentException caught) {
+            log(MessageFormat.format(Messages.getString("PCTCompile.46"), zz), Project.MSG_INFO); //$NON-NLS-1$
+            return Charset.defaultCharset();
         }
     }
 
@@ -683,6 +727,26 @@ public abstract class PCT extends Task {
         } catch (IOException caught) {
             log(MessageFormat.format(Messages.getString("PCTRun.5"), file.getAbsolutePath()),
                     Project.MSG_VERBOSE);
+        }
+    }
+
+    protected String getPassphraseFromCmdLine(String cmdLine) {
+        ProcessBuilder pb = new ProcessBuilder() //
+                .command(cmdLine.split(" ")) //
+                .directory(getProject().getBaseDir()) //
+                .redirectOutput(ProcessBuilder.Redirect.PIPE) //
+                .redirectError(ProcessBuilder.Redirect.INHERIT);
+        try {
+            Process process = pb.start();
+            process.waitFor(30, TimeUnit.SECONDS);
+            BufferedReader stdOut = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()));
+            return stdOut.readLine();
+        } catch (IOException caught) {
+            throw new BuildException(caught);
+        } catch (InterruptedException caught) {
+            Thread.currentThread().interrupt();
+            return "";
         }
     }
 

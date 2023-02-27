@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 MIP Holdings
+ * Copyright 2017-2023 MIP Holdings
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -246,14 +246,14 @@ public class ABLDuckClassVisitor extends ClassDocumentationVisitor {
 
         String vGetTxt = "";
         if (!isPropertyAccessEqualsOrNone(property.modifier, property.getModifier)) {
-            vGetTxt = property.getModifier.toString().concat(" GET");
+            vGetTxt = property.getModifier == null ? "" : property.getModifier.toString().concat(" GET");
             vHasModifier = true;
         } else if (!vGetNull)
             vGetTxt = "GET";
 
         String vSetTxt = "";
         if (!isPropertyAccessEqualsOrNone(property.modifier, property.setModifier)) {
-            vSetTxt = property.setModifier.toString().concat(" SET");
+            vSetTxt = property.setModifier == null ? "" : property.setModifier.toString().concat(" SET");
             vHasModifier = true;
         } else if (!vSetNull)
             vSetTxt = "SET";

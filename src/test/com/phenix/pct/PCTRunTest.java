@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.taskdefs.condition.Os;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -387,11 +388,38 @@ public class PCTRunTest extends BuildFileTestNg {
         assertTrue(new File("PCTRun/test44/Logger2.afterRun.1.txt").exists());
     }
 
-    @Test(groups = {"v11", "win"})
+    @Test(groups = {"v11"})
     public void test45() {
         configureProject("PCTRun/test45/build.xml");
         executeTarget("test1");
+
+        // Message has to be displayed on both Unix and Windows
         executeTarget("test2");
+        boolean unableToFindMessage = false;
+        boolean iniFileIgnored = false;
+        for (String str : getLogBuffer()) {
+            if (str.startsWith("Unable to find INI file"))
+                unableToFindMessage = true;
+            if (str.startsWith("iniFile attribute is ignored"))
+                iniFileIgnored = true;
+        }
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            assertTrue(unableToFindMessage, "Expected message not found");
+        } else {
+            assertTrue(iniFileIgnored, "Expected message not found");
+        }
+
+        boolean unableToFindMessage2 = false;
+        executeTarget("test3");
+        for (String str : getLogBuffer()) {
+            if (str.startsWith("Unable to find INI file"))
+                unableToFindMessage2 = true;
+        }
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            assertTrue(unableToFindMessage2);
+        } else {
+            assertFalse(unableToFindMessage2);
+        }
     }
 
     @Test(groups = {"v11"})
@@ -414,7 +442,7 @@ public class PCTRunTest extends BuildFileTestNg {
         configureProject("PCTRun/test49/build.xml");
         executeTarget("test");
         File f = new File("PCTRun/test49/profiler");
-        assertEquals(f.listFiles().length, 1);
+        assertEquals(f.listFiles().length, 4);
     }
 
     @Test(groups = {"v11"})
@@ -443,6 +471,39 @@ public class PCTRunTest extends BuildFileTestNg {
         assertEquals(f.listFiles().length, 1);
         executeTarget("test2");
         assertEquals(f.listFiles().length, 2);
+    }
+
+    @Test(groups = {"v11"})
+    public void test52() {
+        configureProject("PCTRun/test52/build.xml");
+        expectLog("test1", "----");
+        expectLog("test2", "-- --");
+        expectLog("test3", "--xx--");
+    }
+
+    @Test(groups = {"v11"})
+    public void test53() {
+        final String USER_PASSPHRASE = "User#234";
+        configureProject("PCTRun/test53/build.xml");
+        executeTarget("init");
+        expectBuildException("test1", "No passphrase");
+        assertFalse(searchInList(getLogBuffer(), USER_PASSPHRASE));
+        assertFalse(searchInFile(new File("test1.txt"), USER_PASSPHRASE));
+        if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
+            executeTarget("test4-win");
+            assertFalse(searchInList(getLogBuffer(), USER_PASSPHRASE));
+            assertFalse(searchInFile(new File("test4.txt"), USER_PASSPHRASE));
+            expectBuildException("test5-win", "Wrong command line passphrase");
+            assertFalse(searchInList(getLogBuffer(), USER_PASSPHRASE));
+            assertFalse(searchInFile(new File("test5.txt"), USER_PASSPHRASE));
+        } else {
+            executeTarget("test4-unix");
+            assertFalse(searchInList(getLogBuffer(), USER_PASSPHRASE));
+            assertFalse(searchInFile(new File("test4.txt"), USER_PASSPHRASE));
+            expectBuildException("test5-unix", "Wrong command line passphrase");
+            assertFalse(searchInList(getLogBuffer(), USER_PASSPHRASE));
+            assertFalse(searchInFile(new File("test5.txt"), USER_PASSPHRASE));
+        }
     }
 
 }

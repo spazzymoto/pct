@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  */
 package com.phenix.pct;
 
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 import java.io.File;
@@ -66,6 +67,10 @@ public class PCTLoadDataTest extends BuildFileTestNg {
         executeTarget("base");
         executeTarget("load");
         expectLog("test", "16 20");
+        File dotD = new File("PCTLoadData/test4/data/Tab1.d");
+        assertTrue(dotD.exists()); // Just to be sure we're in the right dir
+        File dotE = new File("PCTLoadData/test4/data/Tab1.e");
+        assertFalse(dotE.exists());
     }
 
     /**
@@ -140,6 +145,9 @@ public class PCTLoadDataTest extends BuildFileTestNg {
         DLCVersion version = DLCVersion.getObject(new File(System.getProperty("DLC")));
         if ((version.getMajorVersion() == 11) && (version.getMinorVersion() <= 2))
             return;
+        // Issue fixed in 12.5, so can't reproduce test case
+        if ((version.getMajorVersion() == 12) && (version.getMinorVersion() >= 5))
+            return;
 
         configureProject("PCTLoadData/test8/build.xml");
         executeTarget("base");
@@ -156,6 +164,9 @@ public class PCTLoadDataTest extends BuildFileTestNg {
         // Only work with 11.3+
         DLCVersion version = DLCVersion.getObject(new File(System.getProperty("DLC")));
         if ((version.getMajorVersion() == 11) && (version.getMinorVersion() <= 2))
+            return;
+        // Issue fixed in 12.5, so can't reproduce test case
+        if ((version.getMajorVersion() == 12) && (version.getMinorVersion() >= 5))
             return;
 
         configureProject("PCTLoadData/test9/build.xml");
@@ -194,7 +205,11 @@ public class PCTLoadDataTest extends BuildFileTestNg {
         // Should fail, because errorTolerance is only 30
         expectBuildException("load5", "Should fail");
         // Should fail, because errorTolerance is 60, but numsep is incorrect
+        // Issue fixed in 12.5, so can't reproduce test case
+        DLCVersion version = DLCVersion.getObject(new File(System.getProperty("DLC")));
+        if ((version.getMajorVersion() == 12) && (version.getMinorVersion() >= 5))
+            return;
         expectBuildException("load6", "Should fail");
-    }    
-    
+    }
+
 }

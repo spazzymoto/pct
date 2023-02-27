@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -64,4 +64,16 @@ public class IndexRebuildTest extends BuildFileTestNg {
         executeTarget("test1");
         expectBuildException("test2", "Invalid option value");
     }
+
+    @Test(groups = {"v11"})
+    public void test5() {
+        configureProject("IndexRebuild/test5/build.xml");
+        executeTarget("init");
+        if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
+            executeTarget("test2-win");
+        } else {
+            executeTarget("test2-unix");
+        }
+    }
+
 }

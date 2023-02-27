@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -474,7 +474,7 @@ public class PCTRun extends PCT implements IRunAttributes {
 
     // In order to know if Progress session has to use verbose logging
     protected boolean isVerbose() {
-        return getAntLoggerLever() > 2;
+        return getAntLoggerLevel() > 2;
     }
 
     // Helper method to set result property to the passed in value if appropriate.
@@ -549,49 +549,7 @@ public class PCTRun extends PCT implements IRunAttributes {
         if (charset != null) {
             return charset;
         }
-
-        String zz = readCharset();
-        try {
-            if (zz != null) {
-                // Central Europe
-                if ("1250".equals(zz))
-                    zz = "windows-1250";
-                // Cyrillic
-                if ("1251".equals(zz))
-                    zz = "windows-1251";
-                // Western Europe
-                if ("1252".equals(zz))
-                    zz = "windows-1252";
-                // Greek
-                if ("1253".equals(zz))
-                    zz = "windows-1253";
-                // Turkish
-                if ("1254".equals(zz))
-                    zz = "windows-1254";
-                // Hebrew
-                if ("1255".equals(zz))
-                    zz = "windows-1255";
-                // Arabic
-                if ("1256".equals(zz))
-                    zz = "windows-1256";
-                // Baltic
-                if ("1257".equals(zz))
-                    zz = "windows-1257";
-                // Vietnamese
-                if ("1258".equals(zz))
-                    zz = "windows-1258";
-                if ("big-5".equalsIgnoreCase(zz))
-                    zz = "Big5";
-                charset = Charset.forName(zz);
-            }
-        } catch (IllegalArgumentException caught) {
-            log(MessageFormat.format(Messages.getString("PCTCompile.46"), zz), Project.MSG_INFO); //$NON-NLS-1$
-            charset = Charset.defaultCharset();
-        }
-        if (charset == null) {
-            log(Messages.getString("PCTCompile.47"), Project.MSG_VERBOSE); //$NON-NLS-1$
-            charset = Charset.defaultCharset();
-        }
+        charset = getCharset(readCharset());
 
         return charset;
     }
@@ -650,6 +608,14 @@ public class PCTRun extends PCT implements IRunAttributes {
                     bw.write("-LISTINGS \"" + runAttributes.getProfiler().getListings().getAbsolutePath() + "\"");
                     bw.newLine();
                 }
+                if (runAttributes.getProfiler().getTracing() != null) {
+                    bw.write("-TRACING \"" + runAttributes.getProfiler().getTracing() + "\"");
+                    bw.newLine();
+                }
+                if (runAttributes.getProfiler().getTraceFilter() != null) {
+                    bw.write("-TRACE-FILTER \"" + runAttributes.getProfiler().getTraceFilter() + "\"");
+                    bw.newLine();
+                }
                 bw.write("-DESCRIPTION \"" + runAttributes.getProfiler().getDescription() + "\"");
                 bw.newLine();
             } catch (IOException caught) {
@@ -675,9 +641,13 @@ public class PCTRun extends PCT implements IRunAttributes {
             // Defines database connections and aliases
             int dbNum = 1;
             for (PCTConnection dbc : runAttributes.getAllDbConnections()) {
-                String connect = dbc.createConnectString();
-                bw.write(MessageFormat.format(this.getProgressProcedures().getConnectString(),
-                        connect));
+                if (dbc.hasCmdLinePassphrase()) {
+                    bw.write(MessageFormat.format(this.getProgressProcedures().getConnectPassphraseCmdLineString(),
+                            dbc.createConnectString(), dbc.getPassphraseCmdLine()));
+                } else {
+                    bw.write(MessageFormat.format(this.getProgressProcedures().getConnectString(),
+                            dbc.createConnectString()));
+                }
 
                 Collection<PCTAlias> aliases = dbc.getAliases();
                 if (aliases != null) {

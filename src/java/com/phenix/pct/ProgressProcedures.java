@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ public abstract interface ProgressProcedures {
     String getInitString();
     String getCallbackString();
     String getConnectString();
+    String getConnectPassphraseCmdLineString();
     String getAliasString();
     String getDBAliasString();
     String getPropathString();

@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2021 Riverside Software
+ * Copyright 2005-2023 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public class ABLUnit extends PCTRun {
             writer.name("writeLog").value(writeLog);
 
             if (destDir != null) {
-                log("Adding location'" + destDir + "' to JSon.", Project.MSG_VERBOSE);
+                log("Adding location '" + destDir + "' to JSON", Project.MSG_VERBOSE);
                 writer.name("output").beginObject();
                 writer.name("location").value(destDir.getAbsolutePath());
                 writer.name("format").value(format);
