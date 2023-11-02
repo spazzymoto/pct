@@ -6,7 +6,7 @@ pipeline {
   options {
     disableConcurrentBuilds()
     buildDiscarder(logRotator(numToKeepStr: '10'))
-    timeout(time: 30, unit: 'MINUTES')
+    timeout(time: 45, unit: 'MINUTES')
     skipDefaultCheckout()
   }
 
@@ -18,7 +18,7 @@ pipeline {
         script {
           def antHome = tool name: 'Ant 1.9', type: 'ant'
           def dlc11 = tool name: 'OpenEdge-11.7', type: 'openedge'
-          def dlc12 = tool name: 'OpenEdge-12.4', type: 'openedge'
+          def dlc12 = tool name: 'OpenEdge-12.7', type: 'openedge'
           def jdk = tool name: 'Corretto 11', type: 'jdk'
           def version = readFile('version.txt').trim()
 
@@ -31,7 +31,7 @@ pipeline {
     }
 
     stage('Standard build') {
-      agent { label 'Linux-Office' }
+      agent { label 'Linux-Office03' }
       steps {
         script {
           checkout([$class: 'GitSCM', branches: scm.branches, extensions: scm.extensions + [[$class: 'CleanCheckout']], userRemoteConfigs: scm.userRemoteConfigs])
@@ -43,14 +43,13 @@ pipeline {
           unstash name: 'classdoc'
           sh 'git rev-parse --short HEAD > head-rev'
           def commit = readFile('head-rev').trim()
-          def jdk = tool name: 'Corretto 11', type: 'jdk'
-          def antHome = tool name: 'Ant 1.9', type: 'ant'
-          def dlc11 = tool name: 'OpenEdge-11.7', type: 'openedge'
-          def dlc12 = tool name: 'OpenEdge-12.4', type: 'openedge'
           def version = readFile('version.txt').trim()
 
-          withEnv(["TERM=xterm", "JAVA_HOME=${jdk}"]) {
-            sh "${antHome}/bin/ant -Dpct.release=${version} -DDLC11=${dlc11} -DDLC12=${dlc12} -DGIT_COMMIT=${commit} dist"
+          docker.image('docker.rssw.eu/progress/dlc:11.7').inside('') {
+            sh "ant -DDLC11=/opt/progress/dlc -DDLC12=/ pbuild"
+          }
+          docker.image('docker.rssw.eu/progress/dlc:12.7').inside('') {
+            sh "ant -Dpct.release=${version} -DDLC11=/ -DDLC12=/opt/progress/dlc -DGIT_COMMIT=${commit} dist"
           }
         }
         stash name: 'tests', includes: 'dist/PCT.jar,dist/testcases.zip,tests.xml'
@@ -62,50 +61,54 @@ pipeline {
       steps {
         parallel branch1: { testBranch('Windows-Office', 'JDK8', 'Ant 1.10', 'OpenEdge-11.7', true, '11.7-Win', '') },
                  branch2: { testBranch('Windows-Office', 'Corretto 11', 'Ant 1.10', 'OpenEdge-12.2', true, '12.2-Win', '') },
-                 branch4: { testBranch('Linux-Office02', 'JDK8', 'Ant 1.10', 'OpenEdge-11.7', false, '11.7-Linux', 'docker.rssw.eu/progress/dlc:11.7') },
-                 branch5: { testBranch('Linux-Office02', 'Corretto 11', 'Ant 1.10', 'OpenEdge-12.2', false, '12.2-Linux', 'docker.rssw.eu/progress/dlc:12.2') },
-                 branch6: { testBranch('Linux-Office02', 'Corretto 11', 'Ant 1.10', 'OpenEdge-12.6', false, '12.6-Linux', 'docker.rssw.eu/progress/dlc:12.6') },
+                 branch3: { testBranch('Windows-Office', 'JDK17', 'Ant 1.10', 'OpenEdge-12.7', true, '12.7-Win', '') },
+                 branch4: { testBranch('Linux-Office03', 'JDK8', 'Ant 1.10', 'OpenEdge-11.7', false, '11.7-Linux', 'docker.rssw.eu/progress/dlc:11.7') },
+                 branch5: { testBranch('Linux-Office03', 'Corretto 11', 'Ant 1.10', 'OpenEdge-12.2', false, '12.2-Linux', 'docker.rssw.eu/progress/dlc:12.2') },
+                 branch7: { testBranch('Linux-Office03', 'Corretto 11', 'Ant 1.10', 'OpenEdge-12.7', false, '12.7-Linux', 'docker.rssw.eu/progress/dlc:12.7') },
+                 branch8: { testBranch('Linux-Office03', 'Corretto 11', 'Ant 1.10', 'OpenEdge-12.8', true, '12.8-Linux', 'docker.rssw.eu/progress/dlc:12.8') },
                  failFast: false
       }
     }
 
     stage('Unit tests reports') {
-      agent { label 'Linux-Office' }
+      agent { label 'Linux-Office03' }
       steps {
         // Wildcards not accepted in unstash...
         unstash name: 'junit-11.7-Win'
-        unstash name: 'junit-11.7-Linux'
         unstash name: 'junit-12.2-Win'
+        unstash name: 'junit-12.7-Win'
+        unstash name: 'junit-11.7-Linux'
         unstash name: 'junit-12.2-Linux'
-        unstash name: 'junit-12.6-Linux'
+        unstash name: 'junit-12.7-Linux'
+        unstash name: 'junit-12.8-Linux'
 
         sh "mkdir junitreports"
         unzip zipFile: 'junitreports-11.7-Win.zip', dir: 'junitreports'
-        unzip zipFile: 'junitreports-11.7-Linux.zip', dir: 'junitreports'
         unzip zipFile: 'junitreports-12.2-Win.zip', dir: 'junitreports'
+        unzip zipFile: 'junitreports-12.7-Win.zip', dir: 'junitreports'
+        unzip zipFile: 'junitreports-11.7-Linux.zip', dir: 'junitreports'
         unzip zipFile: 'junitreports-12.2-Linux.zip', dir: 'junitreports'
-        unzip zipFile: 'junitreports-12.6-Linux.zip', dir: 'junitreports'
+        unzip zipFile: 'junitreports-12.7-Linux.zip', dir: 'junitreports'
+        unzip zipFile: 'junitreports-12.8-Linux.zip', dir: 'junitreports'
         junit 'junitreports/**/*.xml'
       }
     }
 
     stage('Sonar') {
-      agent { label 'Linux-Office' }
+      agent { label 'Linux-Office03' }
       steps {
         unstash name: 'coverage-11.7-Win'
         unstash name: 'coverage-12.2-Win'
+        unstash name: 'coverage-12.7-Win'
+        unstash name: 'coverage-12.8-Linux'
         script {
-          def antHome = tool name: 'Ant 1.9', type: 'ant'
-          def jdk = tool name: 'Corretto 11', type: 'jdk'
-          def dlc = tool name: 'OpenEdge-11.7', type: 'openedge'
           def version = readFile('version.txt').trim()
-
-          withEnv(["JAVA_HOME=${jdk}"]) {
-            sh "${antHome}/bin/ant -lib lib/jacocoant-0.8.7.jar -file sonar.xml -DDLC=${dlc} init-sonar"
+          docker.image('docker.rssw.eu/progress/dlc:12.7').inside('') {
+            sh 'ant -lib lib/jacocoant-0.8.7.jar -file sonar.xml -DDLC=/opt/progress/dlc init-sonar' 
           }
-          withEnv(["PATH+SCAN=${tool name: 'SQScanner4', type: 'hudson.plugins.sonar.SonarRunnerInstallation'}/bin", "JAVA_HOME=${jdk}"]) {
+          docker.image('sonarsource/sonar-scanner-cli:latest').inside('') {
             withSonarQubeEnv('RSSW') {
-              sh "sonar-scanner -Dsonar.projectVersion=${version} -Dsonar.oe.dlc=${dlc}"
+              sh "sonar-scanner -Dsonar.projectVersion=${version}"
             }
           }
         }
@@ -113,7 +116,7 @@ pipeline {
     }
 
     stage('Maven Central') {
-      agent { label 'Linux-Office' }
+      agent { label 'Linux-Office03' }
       steps {
         script {
           def jdk = tool name: 'Corretto 11', type: 'jdk'
@@ -143,7 +146,7 @@ pipeline {
   }
 }
 
-def testBranch(nodeName, jdkVersion, antVersion, dlcVersion, stashCoverage, label, docker) {
+def testBranch(nodeName, jdkVersion, antVersion, dlcVersion, stashCoverage, label, dockerImg) {
   node(nodeName) {
     ws {
       deleteDir()
@@ -151,11 +154,14 @@ def testBranch(nodeName, jdkVersion, antVersion, dlcVersion, stashCoverage, labe
       def jdk = tool name: jdkVersion, type: 'jdk'
       def antHome = tool name: antVersion, type: 'ant'
       unstash name: 'tests'
-      withEnv(["TERM=xterm", "JAVA_HOME=${jdk}"]) {
-        if (isUnix()) {
-          sh "podman run --rm -v ${env.WORKSPACE}:/pct:z -w /pct ${docker} /opt/progress/dlc/ant/bin/ant -DDLC=/opt/progress/dlc -DPROFILER=true -DTESTENV=${label} -lib dist/PCT.jar -f tests.xml init dist"
-        } else
+      if (isUnix()) {
+        docker.image(dockerImg).inside('') {
+          sh "ant -DDLC=/opt/progress/dlc -DPROFILER=true -DTESTENV=${label} -lib dist/PCT.jar -f tests.xml init dist"
+        }
+      } else {
+        withEnv(["JAVA_HOME=${jdk}"]) {
           bat "${antHome}/bin/ant -lib dist/PCT.jar -DDLC=${dlc} -DPROFILER=true -DTESTENV=${label} -f tests.xml init dist"
+        }
       }
       stash name: "junit-${label}", includes: 'junitreports-*.zip'
       archiveArtifacts 'emailable-report-*.html'

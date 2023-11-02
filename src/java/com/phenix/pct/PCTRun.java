@@ -49,7 +49,7 @@ import org.apache.tools.ant.util.FileUtils;
  */
 public class PCTRun extends PCT implements IRunAttributes {
     protected GenericExecuteOptions runAttributes;
-    
+
     protected Path internalPropath = null;
 
     // Internal use
@@ -63,10 +63,13 @@ public class PCTRun extends PCT implements IRunAttributes {
     protected File initProc = null;
     protected File status = null;
     protected File pctLib = null;
+    protected File pctNetcoreLib = null;
     private File xcodeDir = null;
     private File profilerParamFile = null;
     private boolean prepared = false;
     private Charset charset = null;
+    // Set to false only during the internal PCT build process
+    private boolean useEmbeddedPL = true;
 
     /**
      * Default constructor
@@ -109,6 +112,10 @@ public class PCTRun extends PCT implements IRunAttributes {
 
     protected void setRunAttributes(GenericExecuteOptions attrs) {
         this.runAttributes = attrs;
+    }
+
+    public void skipEmbeddedPL() {
+        this.useEmbeddedPL = false;
     }
 
     /**
@@ -245,6 +252,11 @@ public class PCTRun extends PCT implements IRunAttributes {
     }
 
     @Override
+    public void setClassName(String className) {
+        runAttributes.setClassName(className);
+    }
+
+    @Override
     public void setXCodeSessionKey(String xCodeSessionKey) {
         runAttributes.setXCodeSessionKey(xCodeSessionKey);
     }
@@ -252,6 +264,11 @@ public class PCTRun extends PCT implements IRunAttributes {
     @Override
     public void setClientMode(String clientMode) {
         runAttributes.setClientMode(clientMode);
+    }
+
+    @Override
+    public void setClrnetcore(boolean clrnetcore) {
+        runAttributes.setClrnetcore(clrnetcore);
     }
 
     @Override
@@ -384,10 +401,8 @@ public class PCTRun extends PCT implements IRunAttributes {
      */
     @Override
     public void execute() {
-
         checkDlcHome();
-        if ((runAttributes.getProcedure() == null) || (runAttributes.getProcedure().length() == 0))
-            throw new BuildException("Procedure attribute not defined");
+        runAttributes.checkConfig();
 
         if (!prepared) {
             prepareExecTask();
@@ -403,6 +418,7 @@ public class PCTRun extends PCT implements IRunAttributes {
             // to open a procedure library, and miserably fails with error 13.
             pctLib = new File(
                     System.getProperty(PCT.TMPDIR), "pct" + plID + (isSourceCodeUsed() ? "" : ".pl")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+            pctNetcoreLib = new File(System.getProperty(PCT.TMPDIR), "pct-netcore" + plID + ".pl");
 
             preparePropath();
             createInitProcedure();
@@ -412,9 +428,10 @@ public class PCTRun extends PCT implements IRunAttributes {
             // Startup procedure
             exec.createArg().setValue("-p"); //$NON-NLS-1$
             exec.createArg().setValue(initProc.getAbsolutePath());
-            if (getIncludedPL() && !extractPL(pctLib)) {
-                throw new BuildException("Unable to extract pct.pl.");
-            }
+            if (useEmbeddedPL && !extractPL(pctLib))
+                throw new BuildException("Unable to extract pct.pl");
+            if (useNetCorePL() && !extractNetCorePL(pctNetcoreLib))
+                throw new BuildException("Unable to extract pct-netcore.pl");
 
             // OE12 ? Define failOnError and resultProperty
             if (getDLCMajorVersion() >= 12) {
@@ -475,6 +492,12 @@ public class PCTRun extends PCT implements IRunAttributes {
     // In order to know if Progress session has to use verbose logging
     protected boolean isVerbose() {
         return getAntLoggerLevel() > 2;
+    }
+
+    // Return true if task requested access to .Net core procedures
+    protected boolean useNetCorePL() {
+        return runAttributes.isClrnetcore()
+                && (getVersion().compareTo(new DLCVersion(12, 7, "")) >= 0) && !isSourceCodeUsed();
     }
 
     // Helper method to set result property to the passed in value if appropriate.
@@ -752,20 +775,27 @@ public class PCTRun extends PCT implements IRunAttributes {
             }
 
             // Calls progress procedure
-            bw.write(MessageFormat.format(this.getProgressProcedures().getRunString(),
-                    escapeString(runAttributes.getProcedure()), sb.toString()));
-            // Checking return value
-            bw.write(this.getProgressProcedures().getAfterRun());
-            // Writing output parameters to temporary files
-            if (this.runAttributes.getOutputParameters() != null) {
-                for (OutputParameter param : runAttributes.getOutputParameters()) {
-                    File tmpFile = new File(
-                            System.getProperty(PCT.TMPDIR), param.getProgressVar() + "." + PCT.nextRandomInt() + ".out"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-                    param.setTempFileName(tmpFile);
-                    bw.write(MessageFormat.format(this.getProgressProcedures()
-                            .getOutputParameterCall(), param.getProgressVar(),
-                            escapeString(tmpFile.getAbsolutePath())));
+            if (runAttributes.getProcedure() != null) {
+                bw.write(MessageFormat.format(this.getProgressProcedures().getRunString(),
+                        escapeString(runAttributes.getProcedure()), sb.toString()));
+                // Checking return value
+                bw.write(this.getProgressProcedures().getAfterRun());
+                // Writing output parameters to temporary files
+                if (this.runAttributes.getOutputParameters() != null) {
+                    for (OutputParameter param : runAttributes.getOutputParameters()) {
+                        File tmpFile = new File(
+                                System.getProperty(PCT.TMPDIR), param.getProgressVar() + "." + PCT.nextRandomInt() + ".out"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                        param.setTempFileName(tmpFile);
+                        bw.write(MessageFormat.format(this.getProgressProcedures()
+                                .getOutputParameterCall(), param.getProgressVar(),
+                                escapeString(tmpFile.getAbsolutePath())));
+                    }
                 }
+            } else {
+                bw.write(MessageFormat.format(this.getProgressProcedures().getDynamicInvokeString(),
+                        escapeString(runAttributes.getClassName())));
+                // Checking return value
+                bw.write(this.getProgressProcedures().getAfterDynamicInvoke());
             }
             // Quit
             bw.write(this.getProgressProcedures().getQuit());
@@ -780,10 +810,15 @@ public class PCTRun extends PCT implements IRunAttributes {
     }
 
     protected void preparePropath() {
-        if (this.getIncludedPL()) {
+        if (useEmbeddedPL) {
             // PL is extracted later, we just have a reference on filename
             FileList list = new FileList();
             list.setDir(pctLib.getParentFile().getAbsoluteFile());
+            if (useNetCorePL()) {
+                FileList.FileName netcorePL = new FileList.FileName();
+                netcorePL.setName(pctNetcoreLib.getName());
+                list.addConfiguredFile(netcorePL);
+            }
             FileList.FileName fn = new FileList.FileName();
             fn.setName(pctLib.getName());
             list.addConfiguredFile(fn);
@@ -802,42 +837,6 @@ public class PCTRun extends PCT implements IRunAttributes {
         return false;
     }
 
-
-    /**
-     * Escapes a string so it does not accidentally contain Progress escape characters
-     * 
-     * @param str the input string
-     * @return the escaped string
-     */
-    protected static String escapeString(String str) {
-        if (str == null) {
-            return null;
-        }
-
-        int slen = str.length();
-        StringBuilder res = new StringBuilder();
-
-        for (int i = 0; i < slen; i++) {
-            char c = str.charAt(i);
-
-            switch (c) {
-                case '\u007E' : // TILDE converted to TILDE TILDE
-                    res.append("\u007E\u007E"); //$NON-NLS-1$
-                    break;
-
-                case '\u0022' : // QUOTATION MARK converted to TILDE APOSTROPHE
-                case '\''     : // APOSTROPHE converted to TILDE APOSTROPHE
-                    res.append("\u007E\u0027"); //$NON-NLS-1$
-                    break;
-
-                default :
-                    res.append(c);
-            }
-        }
-
-        return res.toString();
-    }
-
     /**
      * Return PCT Debug status
      * 
@@ -854,6 +853,9 @@ public class PCTRun extends PCT implements IRunAttributes {
         // Always delete pct.pl, even in debugPCT mode
         if (pctLib != null) {
             deleteFile(pctLib);
+        }
+        if (useNetCorePL()) {
+            deleteFile(pctNetcoreLib);
         }
         if (runAttributes.isDebugPCT())
             return;

@@ -206,6 +206,11 @@ public interface IRunAttributes {
     void setProcedure(String procedure);
 
     /**
+     * Main procedure to be executed
+     */
+    void setClassName(String className);
+
+    /**
      * XCode session key
      */
     void setXCodeSessionKey(String xCodeSessionKey);
@@ -244,4 +249,9 @@ public interface IRunAttributes {
      * Client mode of ABL session (one of rg, rq, rr, rx)
      */
     void setClientMode(String clientMode);
+
+    /**
+     * Use .Net core (-clrnetcore parameter)
+     */
+    void setClrnetcore(boolean clrnetcore);
 }

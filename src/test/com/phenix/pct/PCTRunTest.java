@@ -234,7 +234,6 @@ public class PCTRunTest extends BuildFileTestNg {
         configureProject("PCTRun/test30/build.xml");
         expectBuildException("test1", "Shouldn't work");
         executeTarget("test2");
-        executeTarget("test3");
     }
 
     @Test(groups = {"v11"})
@@ -504,6 +503,38 @@ public class PCTRunTest extends BuildFileTestNg {
             assertFalse(searchInList(getLogBuffer(), USER_PASSPHRASE));
             assertFalse(searchInFile(new File("test5.txt"), USER_PASSPHRASE));
         }
+    }
+
+    @Test(groups = {"v12", "win"})
+    public void test54() {
+        // Only work with 12.7+
+        DLCVersion version = DLCVersion.getObject(new File(System.getProperty("DLC")));
+        if ((version.getMajorVersion() == 12) && (version.getMinorVersion() <= 6))
+            return;
+
+        configureProject("PCTRun/test54/build.xml");
+        expectLog("test1", ".Net version: 4.0.30319.42000");
+        expectLog("test2", ".Net version: 6.0.21");
+    }
+
+    @Test(groups = {"v11"})
+    public void test55() {
+        configureProject("PCTRun/test55/build.xml");
+        executeTarget("test");
+        assertTrue(searchInList(getLogBuffer(), "hello"));
+        expectBuildException("test2", "Failure");
+        assertTrue(searchInList(getLogBuffer(), "hello2"));
+        expectBuildException("test3", "Failure");
+        assertTrue(searchInList(getLogBuffer(), "(15304)"));
+        expectBuildException("test4", "Failure");
+        assertTrue(searchInList(getLogBuffer(), "hello4"));
+        expectBuildException("test5", "Failure");
+        assertTrue(searchInList(getLogBuffer(), "(15285)"));
+        expectBuildException("test6", "Failure");
+        assertTrue(searchInList(getLogBuffer(), "(15285)"));
+        expectBuildException("test7", "Failure");
+        assertTrue(searchInList(getLogBuffer(), "(247)"));
+        assertTrue(searchInList(getLogBuffer(), "(15285)"));
     }
 
 }

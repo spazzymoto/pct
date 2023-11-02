@@ -182,6 +182,11 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
     }
 
     @Override
+    public void setClrnetcore(boolean clrnetcore) {
+        options.setClrnetcore(clrnetcore);
+    }
+
+    @Override
     public void setCompileUnderscore(boolean compUnderscore) {
         options.setCompileUnderscore(compUnderscore);
     }
@@ -401,6 +406,11 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
      */
     @Override
     public void execute() {
+        if ((options.getProcedure() == null) || (options.getProcedure().length() == 0))
+            throw new BuildException("Procedure attribute not defined");
+        if ((options.getProcedure() != null) && (options.getClassName() != null))
+            throw new BuildException("Procedure and className attributes are mutually exclusive");
+
         ListenerThread listener = null;
         int port = 0;
         checkDlcHome();
@@ -441,8 +451,8 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
         }
 
         try {
-            if (getIncludedPL() && !extractPL(pctLib)) {
-                throw new BuildException("Unable to extract pct.pl.");
+            if (!extractPL(pctLib)) {
+                throw new BuildException("Unable to extract pct.pl");
             }
         } catch (IOException caught) {
             cleanup();
@@ -604,16 +614,14 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
         return list;
     }
     protected void preparePropath() {
-        if (this.getIncludedPL()) {
-            // PL is extracted later, we just have a reference on filename
-            FileList list = new FileList();
-            list.setDir(pctLib.getParentFile().getAbsoluteFile());
-            FileList.FileName fn = new FileList.FileName();
-            fn.setName(pctLib.getName());
-            list.addConfiguredFile(fn);
-            this.internalPropath = new Path(this.getProject());
-            this.internalPropath.addFilelist(list);
-        }
+        // PL is extracted later, we just have a reference on filename
+        FileList list = new FileList();
+        list.setDir(pctLib.getParentFile().getAbsoluteFile());
+        FileList.FileName fn = new FileList.FileName();
+        fn.setName(pctLib.getName());
+        list.addConfiguredFile(fn);
+        this.internalPropath = new Path(this.getProject());
+        this.internalPropath.addFilelist(list);
     }
 
     protected void cleanup() {
@@ -662,14 +670,15 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
         public void run() {
             ExecutorService group = Executors.newFixedThreadPool(numThreads);
             for (int zz = 0; zz < numThreads; zz++) {
+                final Socket socket;
+                try {
+                    socket = server.accept();
+                } catch (IOException caught) {
+                    setBuildException(caught);
+                    return;
+                }
+
                 group.execute(() -> {
-                    final Socket socket;
-                    try {
-                        socket = server.accept();
-                    } catch (IOException caught) {
-                        setBuildException(caught);
-                        return;
-                    }
                     final BackgroundWorker status = createOpenEdgeWorker(socket);
                     status.setDBConnections(options.getDBConnections().iterator());
                     status.setAliases(options.getAliases().iterator());

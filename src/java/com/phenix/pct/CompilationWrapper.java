@@ -55,6 +55,11 @@ public class CompilationWrapper extends PCT implements IRunAttributes, ICompilat
             if (numThreads > 1) {
                 ((PCTBgCompile) pctTask).setNumThreads(numThreads);
             }
+        } else if ("bootstrapCompile".equalsIgnoreCase(getRuntimeConfigurableWrapper().getElementTag())) {
+            pctTask = new PCTCompile();
+            ((PCTCompile) pctTask).skipEmbeddedPL();
+            ((PCTCompile) pctTask).setRunAttributes(runAttributes);
+            ((PCTCompile) pctTask).setCompilationAttributes(compAttributes);
         } else {
             pctTask = new PCTCompile();
             ((PCTCompile) pctTask).setRunAttributes(runAttributes);
@@ -65,7 +70,6 @@ public class CompilationWrapper extends PCT implements IRunAttributes, ICompilat
         }
         pctTask.bindToOwner(this);
         pctTask.setDlcHome(getDlcHome());
-        pctTask.setIncludedPL(getIncludedPL());
         pctTask.execute();
     }
 
@@ -517,6 +521,11 @@ public class CompilationWrapper extends PCT implements IRunAttributes, ICompilat
     }
 
     @Override
+    public void setClassName(String className) {
+        throw new BuildException("Can't set className attribute");
+    }
+
+    @Override
     public void setXCodeSessionKey(String xCodeSessionKey) {
         runAttributes.setXCodeSessionKey(xCodeSessionKey);
     }
@@ -524,6 +533,11 @@ public class CompilationWrapper extends PCT implements IRunAttributes, ICompilat
     @Override
     public void setClientMode(String clientMode) {
         throw new BuildException("Can't set clientMode attribute in compilation task");
+    }
+
+    @Override
+    public void setClrnetcore(boolean clrnetcore) {
+        runAttributes.setClrnetcore(clrnetcore);
     }
 
     @Override

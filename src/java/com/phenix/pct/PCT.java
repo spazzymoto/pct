@@ -69,7 +69,6 @@ public abstract class PCT extends Task {
     private File pdsHome = null;
     private File jdk = null;
     private File jre = null;
-    private boolean includedPL = true;
 
     // Internal use
     private ProgressProcedures pp = null;
@@ -109,7 +108,9 @@ public abstract class PCT extends Task {
             throw new BuildException("Unable to read DLC version file in '" + dlcHome.toString() + "'");
         }
 
-        if (version.compareTo(new DLCVersion(12, 4, "0")) >= 0)
+        if (version.compareTo(new DLCVersion(12, 8, "0")) >= 0)
+            this.pp = new ProgressV128();
+        else if (version.compareTo(new DLCVersion(12, 4, "0")) >= 0)
             this.pp = new ProgressV124();
         else if (version.compareTo(new DLCVersion(12, 1, "0")) >= 0)
             this.pp = new ProgressV121();
@@ -195,15 +196,6 @@ public abstract class PCT extends Task {
     }
 
     /**
-     * Add default pct.pl included in JAR file into PROPATH. Default value is true.
-     * 
-     * @since 0.10
-     */
-    public final void setIncludedPL(boolean inc) {
-        this.includedPL = inc;
-    }
-
-    /**
      * Add an environment variable to the launched process.
      * 
      * @param var new environment variable.
@@ -221,16 +213,6 @@ public abstract class PCT extends Task {
      */
     protected final Collection<Variable> getEnvironmentVariables() {
         return env.getVariablesVector();
-    }
-
-    /**
-     * Use default pct.pl included in JAR file into PROPATH
-     * 
-     * @return boolean
-     * @since 0.10
-     */
-    protected final boolean getIncludedPL() {
-        return this.includedPL;
     }
 
     /**
@@ -344,62 +326,31 @@ public abstract class PCT extends Task {
         FileSet fs1 = new FileSet();
         fs1.setDir(dlcJava);
         fs1.setIncludes("progress.jar");
+        fs1.setIncludes("1padapters-idl.jar");
+        fs1.setIncludes("1padapters-util.jar");
 
         FileSet fs2 = new FileSet();
-        fs2.setDir(new File(getPdsHome(), "eclipse/plugins"));
+        fs2.setDir(new File(dlcJava, "ext"));
         PatternSet ps2 = fs2.createPatternSet();
-        ps2.createInclude().setName("com.progress.openedge.pdt.oemobile.designer_*/mobdesigner.jar");
-        ps2.createInclude().setName("com.progress.openedge.pdt.rest_*/rest.jar");
-        ps2.createInclude().setName("com.progress.openedge.pdt.oemobile_*/oemobile.jar");
-        ps2.createInclude().setName("com.openedge.pdt.project_*/oeproject.jar");
-        ps2.createInclude().setName("com.openedge.pdt.core_*/oe_common_services.jar");
-        ps2.createInclude().setName("com.openedge.pdt.explorer_*/prgsexplorer.jar");
-        ps2.createInclude().setName("com.openedge.pdt.platform_*/platform.jar");
-        ps2.createInclude().setName("com.progress.openedge.pdt.rest_*/lib/jettison-1.2.jar");
-        ps2.createInclude().setName("com.progress.openedge.pdt.pex_*/pex.jar");
-        ps2.createInclude().setName("com.progress.tools.caf.adapter.rest.core_*.jar");
-        ps2.createInclude().setName("com.progress.tools.caf.adapter.rest.mapper_*.jar");
-        ps2.createInclude().setName("com.progress.tools.caf.archiver_*.jar");
-        ps2.createInclude().setName("com.progress.tools.caf.core_*.jar");
-        ps2.createInclude().setName("com.progress.tools.caf.adapter.rest.expose.ui_*.jar");
-        ps2.createInclude().setName("com.progress.tools.caf.ui.mapper_*.jar");
-        ps2.createInclude().setName("com.progress.tools.caf.adapter.rest.expose.core_*.jar");
-        ps2.createInclude().setName("com.progress.openedge.pdt.restoe_*/lib/1padapters-idl.jar");
-        ps2.createInclude().setName("com.progress.tools.caf.runtime_*/lib/rest/expose/1padapters-restExpose.jar");
-        ps2.createInclude().setName("com.progress.tools.caf.runtime_*/lib/framework/lib/log4j/log4j-*.jar");
-        ps2.createInclude().setName("com.progress.tools.common.ui.mapper.el_*.jar");
-        ps2.createInclude().setName("com.progress.tools.common.ui.mapper_*.jar");
-        ps2.createInclude().setName("com.progress.tools.common.ui.el_*.jar");
-        ps2.createInclude().setName("com.progress.tools.common.ui_*.jar");
-        ps2.createInclude().setName("com.progress.tools.installinfo_*.jar");
-        ps2.createInclude().setName("com.progress.tools.branding.iue_*/lib/velocity-1.7.jar");
-        ps2.createInclude().setName("com.progress.tools.branding.iue_*/lib/velocity-1.7-dep.jar");
-        ps2.createInclude().setName("org.eclipse.equinox.common_*.jar");
-        ps2.createInclude().setName("org.eclipse.jface_*.jar");
-        ps2.createInclude().setName("org.eclipse.swt.win32.win32.x86_*.jar");
-        ps2.createInclude().setName("org.eclipse.swt_*.jar");
-        ps2.createInclude().setName("org.eclipse.core.filesystem_*.jar");
-        ps2.createInclude().setName("org.eclipse.emf.ecore.xmi_*.jar");
-        ps2.createInclude().setName("org.eclipse.emf.ecore_*.jar");
-        ps2.createInclude().setName("org.eclipse.equinox.preferences_*.jar");
-        ps2.createInclude().setName("org.eclipse.text_*.jar");
-        ps2.createInclude().setName("org.eclipse.debug.ui_*.jar");
-        ps2.createInclude().setName("org.eclipse.debug.core_*.jar");
-        ps2.createInclude().setName("org.eclipse.ui.workbench_*.jar");
-        ps2.createInclude().setName("org.eclipse.core.runtime_*.jar");
-        ps2.createInclude().setName("org.eclipse.osgi_*.jar");
-        ps2.createInclude().setName("org.eclipse.core.resources_*.jar");
-        ps2.createInclude().setName("org.eclipse.core.jobs_*.jar");
-        ps2.createInclude().setName("org.eclipse.ui.ide_*.jar");
-        ps2.createInclude().setName("org.eclipse.emf.common_*.jar");
-        ps2.createInclude().setName("org.eclipse.core.databinding_*.jar");
-        ps2.createInclude().setName("org.eclipse.emf.databinding_*.jar");
-        ps2.createInclude().setName("org.eclipse.core.databinding.property_*.jar");
-        ps2.createInclude().setName("org.eclipse.core.databinding.observable_*.jar");
-        ps2.createInclude().setName("org.eclipse.wst.server.core_*.jar");
+        ps2.createInclude().setName("jettison-*.jar");
+        ps2.createInclude().setName("commons-logging-*.jar");
+        ps2.createInclude().setName("xmlschema-core-*.jar");
+        ps2.createInclude().setName("xercesImpl-*.jar");
+
+        FileSet fs3 = new FileSet();
+        fs3.setDir(new File(dlcJava, "ant-libs"));
+        fs3.setIncludes("ablwebapp.jar");
+        fs3.setIncludes("ablwebapp-dependencies.jar");
+        fs3.setIncludes("codemodel-dependencies.jar");
+        fs3.setIncludes("ast.jar");
+        fs3.setIncludes("ast-dependencies.jar");
+        fs3.setIncludes("velocity-1.7.jar");
+        fs3.setIncludes("velocity-1.7-dep.jar");
+        fs3.setIncludes("1padapters-restExpose.jar");
 
         path.addFileset(fs1);
         path.addFileset(fs2);
+        path.addFileset(fs3);
 
         return path;
     }
@@ -472,6 +423,20 @@ public abstract class PCT extends Task {
             return extractZip(f);
 
         String plFile = "/pct" + version.getMajorVersion() + (version.is64bits() ? "-64" : "") + ".pl";
+        try (InputStream is = getClass().getResourceAsStream(plFile);
+                OutputStream os = new FileOutputStream(f)) {
+            byte[] b = new byte[8192];
+            int k = 0;
+            while ((k = is.read(b)) != -1) {
+                os.write(b, 0, k);
+            }
+        }
+
+        return true;
+    }
+
+    protected boolean extractNetCorePL(File f) throws IOException {
+        String plFile = "/pct" + version.getMajorVersion() + "-netcore.pl";
         try (InputStream is = getClass().getResourceAsStream(plFile);
                 OutputStream os = new FileOutputStream(f)) {
             byte[] b = new byte[8192];
@@ -669,13 +634,11 @@ public abstract class PCT extends Task {
             switch (c) {
                 case '\u007E' : // TILDE converted to TILDE TILDE
                     res.append("\u007E\u007E"); //$NON-NLS-1$
-
                     break;
 
                 case '\u0022' : // QUOTATION MARK converted to TILDE APOSTROPHE
                 case '\''     : // APOSTROPHE converted to TILDE APOSTROPHE
                     res.append("\u007E\u0027"); //$NON-NLS-1$
-
                     break;
 
                 default :

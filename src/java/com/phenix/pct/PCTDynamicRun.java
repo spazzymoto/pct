@@ -67,7 +67,10 @@ public class PCTDynamicRun extends PCTRun {
             writer.beginObject();
             writer.name("verbose").value(isVerbose());
             writer.name("super").value(runAttributes.isSuperInit());
-            writer.name("procedure").value(runAttributes.getProcedure());
+            if (runAttributes.getProcedure() != null)
+                writer.name("procedure").value(runAttributes.getProcedure());
+            if (runAttributes.getClassName() != null)
+                writer.name("className").value(runAttributes.getClassName());
             writer.name("returnValue").value(status.getAbsolutePath());
             writer.name("callback").value(runAttributes.getMainCallback());
             writer.name("propath").beginArray();
@@ -158,8 +161,7 @@ public class PCTDynamicRun extends PCTRun {
     @Override
     public void execute() {
         checkDlcHome();
-        if ((runAttributes.getProcedure() == null) || (runAttributes.getProcedure().length() == 0))
-            throw new BuildException("Procedure attribute not defined");
+        runAttributes.checkConfig();
         if ((runAttributes.getOutputParameters() != null)
                 && (runAttributes.getOutputParameters().size() > 2))
             throw new BuildException("Only two OutputParameter nodes allowed");
@@ -194,8 +196,8 @@ public class PCTDynamicRun extends PCTRun {
             exec.createArg().setValue("-p");
             exec.createArg().setValue(getProgressProcedures().getDynamicRunProcedure());
 
-            if (getIncludedPL() && !extractPL(pctLib)) {
-                throw new BuildException("Unable to extract pct.pl.");
+            if (!extractPL(pctLib)) {
+                throw new BuildException("Unable to extract pct.pl");
             }
 
             exec.execute();
