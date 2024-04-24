@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2023 Riverside Software
+ * Copyright 2005-2024 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -408,7 +408,8 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
     public void execute() {
         if ((options.getProcedure() == null) || (options.getProcedure().length() == 0))
             throw new BuildException("Procedure attribute not defined");
-        if ((options.getProcedure() != null) && (options.getClassName() != null))
+        if ((options.getProcedure() != null) && !options.getProcedure().trim().isEmpty()
+                && (options.getClassName() != null) && !options.getClassName().trim().isEmpty())
             throw new BuildException("Procedure and className attributes are mutually exclusive");
 
         ListenerThread listener = null;
@@ -567,9 +568,8 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
     private void createProfilerParamFile(File paramFile) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(paramFile))) {
             // Assuming nobody will use file names with double quotes in this case...
-            bw.write("-FILENAME \""
-                    + new File(options.getProfiler().getOutputDir(), "profiler"
-                            + PCT.nextRandomInt() + ".out\""));
+            bw.write("-FILENAME \"" + new File(options.getProfiler().getOutputDir(), "profiler"
+                    + PCT.nextRandomInt() + options.getProfiler().getExtension() + "\""));
             bw.newLine();
             if (options.getProfiler().hasCoverage()) {
                 bw.write("-COVERAGE");

@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2023 Riverside Software
+ * Copyright 2005-2024 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -535,6 +535,30 @@ public class PCTRunTest extends BuildFileTestNg {
         expectBuildException("test7", "Failure");
         assertTrue(searchInList(getLogBuffer(), "(247)"));
         assertTrue(searchInList(getLogBuffer(), "(15285)"));
+        executeTarget("test8");
+        assertTrue(searchInList(getLogBuffer(), "hello"));
+        executeTarget("test9");
+        assertTrue(searchInList(getLogBuffer(), "ABC"));
     }
 
+    @Test(groups = {"v11"})
+    public void test56() {
+        configureProject("PCTRun/test56/build.xml");
+
+        executeTarget("test1");
+        String[] list1 = new File("PCTRun/test56/profiler1").list();
+        assertEquals(list1.length, 1);
+        assertTrue(list1[0].endsWith(".out"));
+
+        executeTarget("test2");
+        String[] list2 = new File("PCTRun/test56/profiler2").list();
+        assertEquals(list2.length, 1);
+        // No extension, ends with digit
+        assertTrue(Character.isDigit(list2[0].charAt(list2[0].length() - 1)));
+
+        executeTarget("test3");
+        String[] list3 = new File("PCTRun/test56/profiler3").list();
+        assertEquals(list3.length, 1);
+        assertTrue(list3[0].endsWith(".prof"));
+    }
 }

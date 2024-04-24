@@ -1,8 +1,8 @@
 {
   "name": "PCT",
-  "version": "227-pre",
+  "version": "229-pre",
   "charset": "utf-8",
-  "oeversion": "12.2",
+  "oeversion": "12.8",
   "graphicalMode": false,
   "extraParameters": "",
   "buildPath": [

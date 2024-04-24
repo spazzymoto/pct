@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2023 Riverside Software
+ * Copyright 2005-2024 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ public class Profiler {
     private String description = "Default description";
     private String tracing;
     private String traceFilter;
+    private String extension = ".out";
     private File outputFile = null;
     private File outputDir = null;
     private File listings = null;
@@ -138,6 +139,14 @@ public class Profiler {
 
     public String getTraceFilter() {
         return traceFilter;
+    }
+
+    public void setExtension(String extension) {
+        this.extension = extension;
+    }
+
+    public String getExtension() {
+        return extension;
     }
 
     /**

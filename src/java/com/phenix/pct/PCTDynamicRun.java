@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2023 Riverside Software
+ * Copyright 2005-2024 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -67,9 +67,11 @@ public class PCTDynamicRun extends PCTRun {
             writer.beginObject();
             writer.name("verbose").value(isVerbose());
             writer.name("super").value(runAttributes.isSuperInit());
-            if (runAttributes.getProcedure() != null)
+            if ((runAttributes.getProcedure() != null)
+                    && !runAttributes.getProcedure().trim().isEmpty())
                 writer.name("procedure").value(runAttributes.getProcedure());
-            if (runAttributes.getClassName() != null)
+            if ((runAttributes.getClassName() != null)
+                    && !runAttributes.getClassName().trim().isEmpty())
                 writer.name("className").value(runAttributes.getClassName());
             writer.name("returnValue").value(status.getAbsolutePath());
             writer.name("callback").value(runAttributes.getMainCallback());
