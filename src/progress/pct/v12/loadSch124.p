@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2024 Riverside Software
+ * Copyright 2005-2025 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  *
  */
 
-USING Progress.Lang.Class.
 USING OpenEdge.DataAdmin.Binding.DataDefinitionOptions.
 USING OpenEdge.DataAdmin.Binding.IDataDefinitionLoader.
 
@@ -52,10 +51,10 @@ ASSIGN callbackCls = DYNAMIC-FUNCTION('getParameter' IN SOURCE-PROCEDURE, INPUT 
        lInactIdx = DYNAMIC-FUNCTION('getParameter' IN SOURCE-PROCEDURE, INPUT 'inactiveIdx') EQ "true":U.
 
 IF (callbackCls > "") THEN DO:
-    callback = CAST(Class:GetClass(callbackCls):new(), rssw.pct.ILoadCallback).
+    callback = CAST(Progress.Lang.Class:GetClass(callbackCls):new(), rssw.pct.ILoadCallback).
 END.
 IF (analyzerCls > "") THEN DO:
-    analyzer = CAST(Class:GetClass(analyzerCls):new(), IDataDefinitionLoader).
+    analyzer = CAST(Progress.Lang.Class:GetClass(analyzerCls):new(), IDataDefinitionLoader).
 end.
 
 IF VALID-OBJECT(callback) THEN

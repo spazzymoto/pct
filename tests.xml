@@ -28,9 +28,14 @@
     <os family="windows" />
   </condition>
   <!-- Excluded group depending on version -->
-  <condition property="EXCLUDES-VERSION" value="nov12" else="">
+  <condition property="EXCLUDES-VERSION" value="nov11">
+    <equals arg1="${OE_MAJOR_VERSION}" arg2="11" />
+  </condition>
+  <condition property="EXCLUDES-VERSION" value="nov12">
     <equals arg1="${OE_MAJOR_VERSION}" arg2="12" />
   </condition>
+
+  <!-- Only used by old unit tests (OEUnit, ProUnit) -->
   <condition property="VERSION" value="dlc${OE_MAJOR_VERSION}" else="dlc11">
     <isset property="OE_MAJOR_VERSION" />
   </condition>
@@ -72,6 +77,7 @@
     <mkdir dir="profiler" />
     <taskdef resource="testngtasks" classpathref="testng.cp" />
     <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml" classpathref="jacoco.cp" />
+    <echo message="Execute unit tests -- Groups ${GROUPS} -- Excludes ${EXCLUDES-OS},${EXCLUDES-VERSION} -- Suite ${TESTENV} -- DLC ${DLC}" />
     <jacoco:coverage destFile="profiler/jacoco-${TESTENV}.exec">
       <testng workingDir="testbox" outputdir="test-output" useDefaultListeners="true" groups="${GROUPS}" excludedGroups="${EXCLUDES-OS},${EXCLUDES-VERSION}" suiteName="${TESTENV} tests">
         <classfileset dir="build/test" includes="**/*Test.class" excludes="**/*BrokerTest.class" />

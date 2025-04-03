@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2024 Riverside Software
+ * Copyright 2005-2025 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  *  limitations under the License.
  *
  */
-
-USING Progress.Lang.Class.
 
 DEFINE VARIABLE hQuery  AS HANDLE    NO-UNDO.
 DEFINE VARIABLE hBuffer AS HANDLE    NO-UNDO.
@@ -50,10 +48,10 @@ ASSIGN callbackCls = DYNAMIC-FUNCTION('getParameter' IN SOURCE-PROCEDURE, INPUT 
        lInactIdx = DYNAMIC-FUNCTION('getParameter' IN SOURCE-PROCEDURE, INPUT 'inactiveIdx') EQ "true":U.
 
 IF (callbackCls > "") THEN DO:
-    callback = CAST(Class:GetClass(callbackCls):new(), rssw.pct.ILoadCallback).
+    callback = CAST(Progress.Lang.Class:GetClass(callbackCls):new(), rssw.pct.ILoadCallback).
 END.
 IF (analyzerCls > "") THEN DO:
-    analyzer = CAST(Class:GetClass(analyzerCls):new(), OpenEdge.DataAdmin.Binding.IDataDefinitionLoader).
+    analyzer = CAST(Progress.Lang.Class:GetClass(analyzerCls):new(), OpenEdge.DataAdmin.Binding.IDataDefinitionLoader).
 end.
 
 IF VALID-OBJECT(callback) THEN

@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2024 Riverside Software
+ * Copyright 2005-2025 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -130,6 +130,10 @@ public class PCTBgCompile extends PCTBgRun {
                 this.cleanup();
                 throw new BuildException(Messages.getString("PCTCompile.39")); //$NON-NLS-1$
             }
+        }
+
+        if (compAttrs.isRequireReturnValues() && getVersion().compareTo(new DLCVersion(12, 2, "0")) < 0) {
+            log("Skip requireReturnValues attribute, as it is set to true but not available in this version of OpenEdge");
         }
 
         log(Messages.getString("PCTCompile.40"), Project.MSG_INFO); //$NON-NLS-1$
@@ -348,7 +352,8 @@ public class PCTBgCompile extends PCTBgRun {
             sb.append(Boolean.toString(compAttrs.isRequireFieldQualifiers())).append(';');
             sb.append(compAttrs.getCallbackClass() == null ? "" : compAttrs.getCallbackClass()).append(';');
             sb.append(CompilationAttributes.CONSOLE_OUTPUT_TYPE).append(';');
-            sb.append(Boolean.toString(compAttrs.isRequireReturnValues())).append(';');
+            sb.append(Boolean.toString(getVersion().compareTo(new DLCVersion(12, 2, "0")) >= 0
+                    && compAttrs.isRequireReturnValues())).append(';');
 
             return sb.toString();
         }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2024 MIP Holdings
+ * Copyright 2017-2025 MIP Holdings
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -465,6 +465,7 @@ public class ABLDuck extends PCT {
         String inherits = curClass.inherits;
 
         if (!"".equals(inherits)) {
+            inherits = determineFullyQualifiedClassName(curClass.uses, inherits);
             result.addHierarchy(inherits);
 
             CompilationUnit nextClass = classes.get(inherits);

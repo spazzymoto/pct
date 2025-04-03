@@ -52,8 +52,33 @@ pipeline {
             sh "ant -Dpct.release=${version} -DDLC11=/ -DDLC12=/opt/progress/dlc -DGIT_COMMIT=${commit} dist"
           }
         }
-        stash name: 'tests', includes: 'dist/PCT.jar,dist/testcases.zip,tests.xml'
-        archiveArtifacts 'dist/PCT.jar,dist/PCT-javadoc.jar,dist/PCT-sources.jar'
+        stash name: 'unsigned', includes: 'dist/PCT.jar,eToken.cfg'
+      }
+    }
+
+    stage('Sign') {
+      agent { label 'Windows-Office02' }
+      environment {
+        KEYSTORE_ALIAS = credentials('KEYSTORE_ALIAS')
+        KEYSTORE_PASS = credentials('KEYSTORE_PASS')
+      }
+      steps {
+        unstash name: 'unsigned'
+        script {
+          withEnv(["PATH+JAVA=${tool name: 'JDK17', type: 'jdk'}\\bin"]) {
+            bat "jarsigner -tsa http://timestamp.sectigo.com -keystore NONE -storepass %KEYSTORE_PASS% -storetype PKCS11 -providerClass sun.security.pkcs11.SunPKCS11 -providerArg .\\eToken.cfg -signedjar dist\\PCT-signed.jar dist\\PCT.jar %KEYSTORE_ALIAS%"
+          }
+        }
+        stash name: 'signed', includes: 'dist/PCT-signed.jar'
+      }
+    }
+
+    stage('Archive') {
+      agent { label 'Linux-Office03' }
+      steps {
+        unstash name: 'signed'
+        stash name: 'tests', includes: 'dist/PCT.jar,dist/PCT-signed.jar,dist/testcases.zip,tests.xml'
+        archiveArtifacts 'dist/PCT.jar,dist/PCT-signed.jar,dist/PCT-javadoc.jar,dist/PCT-sources.jar'
       }
     }
 
@@ -81,12 +106,12 @@ pipeline {
         unstash name: 'junit-12.8-Linux'
 
         sh "mkdir junitreports"
-        unzip zipFile: 'junitreports-11.7-Win.zip', dir: 'junitreports'
-        unzip zipFile: 'junitreports-12.2-Win.zip', dir: 'junitreports'
-        unzip zipFile: 'junitreports-12.8-Win.zip', dir: 'junitreports'
-        unzip zipFile: 'junitreports-11.7-Linux.zip', dir: 'junitreports'
-        unzip zipFile: 'junitreports-12.2-Linux.zip', dir: 'junitreports'
-        unzip zipFile: 'junitreports-12.8-Linux.zip', dir: 'junitreports'
+        unzip zipFile: 'junitreports-11.7-Win.zip', dir: 'junitreports', quiet: true
+        unzip zipFile: 'junitreports-12.2-Win.zip', dir: 'junitreports', quiet: true
+        unzip zipFile: 'junitreports-12.8-Win.zip', dir: 'junitreports', quiet: true
+        unzip zipFile: 'junitreports-11.7-Linux.zip', dir: 'junitreports', quiet: true
+        unzip zipFile: 'junitreports-12.2-Linux.zip', dir: 'junitreports', quiet: true
+        unzip zipFile: 'junitreports-12.8-Linux.zip', dir: 'junitreports', quiet: true
         junit 'junitreports/**/*.xml'
       }
     }
@@ -124,9 +149,9 @@ pipeline {
           // It then takes a few minutes before artifacts are visible in Maven Central
           withEnv(["MAVEN_HOME=${mvn}", "JAVA_HOME=${jdk}"]) {
             if (!version.endsWith('-pre')) {
-              sh "$MAVEN_HOME/bin/mvn -B -ntp gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2 -DrepositoryId=ossrh -DpomFile=alt-pom.xml -Dfile=dist/PCT.jar -Pgpg"
-              sh "$MAVEN_HOME/bin/mvn -B -ntp gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2 -DrepositoryId=ossrh -DpomFile=alt-pom.xml -Dfile=dist/PCT-sources.jar -Dclassifier=sources -Pgpg"
-              sh "$MAVEN_HOME/bin/mvn -B -ntp gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2 -DrepositoryId=ossrh -DpomFile=alt-pom.xml -Dfile=dist/PCT-javadoc.jar -Dclassifier=javadoc -Pgpg"
+              sh "$MAVEN_HOME/bin/mvn -B -ntp gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2 -DrepositoryId=ossrh -DpomFile=alt-pom.xml -Dfile=dist/PCT.jar"
+              sh "$MAVEN_HOME/bin/mvn -B -ntp gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2 -DrepositoryId=ossrh -DpomFile=alt-pom.xml -Dfile=dist/PCT-sources.jar -Dclassifier=sources"
+              sh "$MAVEN_HOME/bin/mvn -B -ntp gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2 -DrepositoryId=ossrh -DpomFile=alt-pom.xml -Dfile=dist/PCT-javadoc.jar -Dclassifier=javadoc"
               mail body: "---", to: "g.querret@riverside-software.fr", subject: "PCT - Release artifact on Sonatype"
             }
           }
@@ -154,7 +179,7 @@ def testBranch(nodeName, jdkVersion, antVersion, dlcVersion, stashCoverage, labe
       unstash name: 'tests'
       if (isUnix()) {
         docker.image(dockerImg).inside('') {
-          sh "ant -DDLC=/opt/progress/dlc -DPROFILER=true -DTESTENV=${label} -lib dist/PCT.jar -f tests.xml init dist"
+          sh "ant -DDLC=/opt/progress/dlc -DPROFILER=true -DTESTENV=${label} -lib dist/PCT-signed.jar -f tests.xml init dist"
         }
       } else {
         withEnv(["JAVA_HOME=${jdk}"]) {

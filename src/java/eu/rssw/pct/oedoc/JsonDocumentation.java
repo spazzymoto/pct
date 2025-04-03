@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2024 Riverside Software
+ * Copyright 2005-2025 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -253,8 +254,10 @@ public class JsonDocumentation extends PCT {
     private void parseAndWriteUnit(File file, RefactorSession session, JsonWriter writer)
             throws IOException {
         log("Proparse: " + file.getName(), Project.MSG_DEBUG);
+        InputStream input = null;
         try {
-            ParseUnit unit = new ParseUnit(file, file.getName(), session);
+            input = new FileInputStream(file);
+            ParseUnit unit = new ParseUnit(input, file.getName(), session, session.getCharset());
             unit.treeParser01();
             if (session.getTypeInfo(unit.getClassName()) != null) {
                 writeClass(writer, session.getTypeInfo(unit.getClassName()), unit);
@@ -264,6 +267,13 @@ public class JsonDocumentation extends PCT {
         } catch (UncheckedIOException | ParseCancellationException caught) {
             log("Unable to attach comments from " + file.getAbsolutePath() + " - Proparse error: "
                     + caught.getMessage(), Project.MSG_INFO);
+        } finally {
+            try {
+                if (input != null)
+                    input.close();
+            } catch (IOException uncaught) {
+                
+            }
         }
     }
 
@@ -457,7 +467,7 @@ public class JsonDocumentation extends PCT {
         } else if (list.size() == 1) {
             return list.get(0);
         } else {
-            String sig = elem.getSignature();
+            String sig = elem.getSignature().substring(0, elem.getSignature().indexOf(')') + 1);
             for (Routine r : list) {
                 if (r.getSignature().equalsIgnoreCase(sig))
                     return r;
@@ -550,18 +560,36 @@ public class JsonDocumentation extends PCT {
     private List<String> convertJavadoc(String comment) {
         List<String> rslt = new ArrayList<>();
         if (checkStartComment(comment.trim())) {
-            for (String s : comment.trim().split("\n")) {
-                // First line and last line is not supposed to contain anything
-                if (!checkStartComment(s.trim()) && !s.endsWith("*/")) {
-                    // Trim first *
-                    if (s.trim().startsWith("*"))
-                        rslt.add(s.trim().substring(1).trim());
-                    else
-                        rslt.add(s.trim());
+            for (String line : comment.trim().split("\n")) {
+                line = line.trim();
+                if (line.endsWith("*/")) {
+                    line = line.substring(0, line.length() - 2).trim();
+                    if (line.isEmpty())
+                        continue;
                 }
+                if (checkStartComment(line)) {
+                    line = trimStartComment(line);
+                    if (line.isEmpty())
+                        continue;
+                }
+                if (line.startsWith("*"))
+                    line = line.substring(1).trim();
+
+                rslt.add(line);
             }
         }
         return rslt;
+    }
+
+    private String trimStartComment(String comment) {
+        if ((style == CommentStyle.JAVADOC) && comment.startsWith("/**"))
+            return comment.substring(3).trim();
+        else if ((style == CommentStyle.SIMPLE) && comment.startsWith("/*"))
+            return comment.substring(2).trim();
+        else if ((style == CommentStyle.CONSULTINGWERK) && comment.startsWith("/**"))
+            return comment.substring(3).trim();
+        else
+            return comment;
     }
 
     private boolean checkStartComment(String comment) {

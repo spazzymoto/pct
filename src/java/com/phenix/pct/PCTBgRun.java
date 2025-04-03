@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2024 Riverside Software
+ * Copyright 2005-2025 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -487,7 +487,7 @@ public abstract class PCTBgRun extends PCT implements IRunAttributes {
      * according to cpstream, parameter files, ...) and dealing with OE encodings (such as undefined
      * or 1252)
      */
-    protected Charset getCharset() {
+    public Charset getCharset() {
         if (charset != null) {
             return charset;
         }

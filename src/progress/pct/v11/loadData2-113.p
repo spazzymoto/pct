@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2024 Riverside Software
+ * Copyright 2005-2025 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  *  limitations under the License.
  *
  */
-
-using Progress.Lang.Class.
 
 define variable callback    as rssw.pct.ILoadDataCallback no-undo.
 define variable callbackCls as character no-undo.
@@ -33,7 +31,7 @@ do on error undo, retry:
 assign cTbl = DYNAMIC-FUNCTION('getParameter' IN SOURCE-PROCEDURE, INPUT 'tableName').
 assign callbackCls = DYNAMIC-FUNCTION('getParameter' IN SOURCE-PROCEDURE, INPUT 'callbackClass').
 if (callbackCls > "") then do:
-    callback = cast(Class:GetClass(callbackCls):new(), rssw.pct.ILoadDataCallback).
+    callback = cast(Progress.Lang.Class:GetClass(callbackCls):new(), rssw.pct.ILoadDataCallback).
     callback:initialize(cTbl).
 end.
 

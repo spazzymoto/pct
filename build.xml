@@ -70,10 +70,10 @@
     <pathelement location="lib/jaxb-api-2.3.1.jar" />
     <!-- ABLDuck classes -->
     <pathelement location="lib/commonmark-0.11.0.jar"/>
-    <pathelement location="lib/database-parser-2.22.1.jar"/>
-    <pathelement location="lib/rcode-reader-2.22.1.jar"/>
-    <pathelement location="lib/openedge-checks-2.22.1.jar"/>
-    <pathelement location="lib/proparse-2.22.1.jar"/>
+    <pathelement location="lib/database-parser-2.30.0.jar"/>
+    <pathelement location="lib/rcode-reader-2.30.0.jar"/>
+    <pathelement location="lib/openedge-checks-2.30.0.jar"/>
+    <pathelement location="lib/proparse-2.30.0.jar"/>
     <pathelement location="lib/guava-32.1.3-jre.jar"/>
     <pathelement location="lib/antlr4-runtime-4.13.0.jar"/>
   </path>
@@ -88,7 +88,7 @@
     <pathelement location="lib/byte-buddy-agent-1.9.14.jar" />
     <pathelement location="lib/hamcrest-2.1.jar" />
     <pathelement location="lib/objenesis-2.6.jar" />
-    <pathelement location="lib/rcode-reader-2.22.1.jar"/>
+    <pathelement location="lib/rcode-reader-2.30.0.jar"/>
   </path>
   
   <target name="init" description="Initialize PCT builder" depends="init-properties">
@@ -137,7 +137,7 @@
         <include name="**/*.properties" />
         <exclude name="com/phenix/pct/*Test.class" />
       </fileset>
-      <zipfileset src="lib/rcode-reader-2.22.1.jar" />
+      <zipfileset src="lib/rcode-reader-2.30.0.jar" />
     </jar>
   </target>
 
@@ -256,7 +256,7 @@
     <mkdir dir="classDocTemp/v11" />
     <mkdir dir="classDocTemp/v12" />
     <mkdir dir="classDocTemp/v12-netcore" />
-    <copy todir="classDocTemp">
+    <copy todir="classDocTemp" overwrite="true">
       <zipfileset src="dist/classDoc.zip" />
     </copy>
     <!-- Note that pct11.pl is updated with v12 prolib (workaround for the Jenkins build process) -->
@@ -273,7 +273,7 @@
     <zip destfile="${build}/ablduck.zip">
       <fileset dir="${src.java}/za/co/mip/ablduck/resources" />
     </zip>
-    <jar jarfile="${dist}/PCT.jar">
+    <jar jarfile="${dist}/PCT.jar" duplicate="preserve">
       <fileset dir="${build-java}">
         <include name="**/*.class" />
         <include name="**/*.properties" />
@@ -296,10 +296,10 @@
       <zipfileset src="lib/jaxb-impl-2.3.2.jar" />
       <zipfileset src="lib/guava-32.1.3-jre.jar" />
       <zipfileset src="lib/antlr4-runtime-4.13.0.jar" />
-      <zipfileset src="lib/proparse-2.22.1.jar" />
-      <zipfileset src="lib/rcode-reader-2.22.1.jar" />
-      <zipfileset src="lib/database-parser-2.22.1.jar" />
-      <zipfileset src="lib/openedge-checks-2.22.1.jar" />
+      <zipfileset src="lib/proparse-2.30.0.jar" />
+      <zipfileset src="lib/rcode-reader-2.30.0.jar" />
+      <zipfileset src="lib/database-parser-2.30.0.jar" />
+      <zipfileset src="lib/openedge-checks-2.30.0.jar" />
       <zipfileset src="lib/slf4j-api-1.7.36.jar" />
       <zipfileset src="lib/slf4j-simple-1.7.36.jar" />
 
@@ -323,10 +323,7 @@
 
   <target name="test-build" depends="build" description="Builds TestNG tests">
     <javac srcdir="${src.test}" destdir="${build-test}" debug="${debug}" release="8" deprecation="${deprecation}" optimize="${optimize}" encoding="utf-8" includeAntRuntime="false">
-      <include name="org/ini4j/**/*.java" />
-      <include name="com/phenix/pct/*.java" />
-      <include name="net/cordova/prounit/*.java" />
-      <include name="za/co/mip/ablduck/*.java" />
+      <include name="**/*.java" />
       <classpath refid="pct.test.compil" />
     </javac>
   </target>
