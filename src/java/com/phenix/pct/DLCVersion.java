@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ public class DLCVersion implements Comparable<DLCVersion> {
         if (m.matches()) {
             builder.minor = Integer.parseInt((m.group(1) == null ? "0" : m.group(1)));
             builder.maintenance = (m.group(2) == null ? "0" : m.group(2));
-            builder.patch = (m.group(3) == null ? "0" : m.group(3));
+            builder.patch = (m.group(3) == null ? "" : m.group(3));
         } else {
             throw new IllegalArgumentException("Invalid $DLC/version file : " + str);
         }

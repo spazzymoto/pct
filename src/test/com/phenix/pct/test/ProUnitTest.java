@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,21 +31,21 @@ import java.io.File;
 public class ProUnitTest extends BuildFileTestNg {
 
     //Expected error if we miss project file parameter
-    @Test(groups= {"v11", "nov12"}, expectedExceptions = BuildException.class)
+    @Test(groups= {"v11", "nov12", "nov13"}, expectedExceptions = BuildException.class)
     public void test1() {
         configureProject("ProUnit/test1/build.xml");
         executeTarget("test");
     }
 
     //Expected error if it's a bad project file parameter
-    @Test(groups= {"v11", "nov12"}, expectedExceptions = BuildException.class)
+    @Test(groups= {"v11", "nov12", "nov13"}, expectedExceptions = BuildException.class)
     public void test2() {
         configureProject("ProUnit/test2/build.xml");
         executeTarget("test");
     }
 
     //Normal execution with results
-    @Test(groups= {"v11", "nov12"})
+    @Test(groups= {"v11", "nov12", "nov13"})
     public void test3() {
         configureProject("ProUnit/test3/build.xml");
         executeTarget("test");

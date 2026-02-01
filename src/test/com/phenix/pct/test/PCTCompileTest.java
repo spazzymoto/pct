@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -1752,6 +1752,43 @@ public class PCTCompileTest extends BuildFileTestNg {
                 "Skip 'CompileCallback' callback as it doesn't implement rssw.pct.ICompileCallback",
                 "1 file(s) compiled"});
         assertTrue(new File(getBaseDir(), "test93/build2/test.r").exists());
+    }
+
+    @Test(groups = {"v11"})
+    public void test94() {
+        configureProject(getBaseDir() + "test94/build.xml");
+        File f1 = new File(getBaseDir(), "test94/src1/rssw/MyClass.r");
+        File f2 = new File(getBaseDir(), "test94/src2/rssw/MyClass.r");
+        File f3 = new File(getBaseDir(), "test94/src2/rssw/MyChildClass.r");
+        assertFalse(f1.exists());
+        assertFalse(f2.exists());
+        assertFalse(f3.exists());
+        executeTarget("test1");
+        assertTrue(f1.exists());
+        assertFalse(f2.exists());
+        assertTrue(f3.exists());
+        executeTarget("clean");
+        assertFalse(f1.exists());
+        assertFalse(f2.exists());
+        assertFalse(f3.exists());
+        executeTarget("test2");
+        assertTrue(f1.exists());
+        assertFalse(f2.exists());
+        assertTrue(f3.exists());
+        executeTarget("clean");
+        executeTarget("test3");
+        assertFalse(f1.exists());
+        assertFalse(f2.exists());
+        assertFalse(f3.exists());
+        assertTrue(new File(getBaseDir(), "test94/build/rssw/MyClass.r").exists());
+        assertTrue(new File(getBaseDir(), "test94/build/rssw/MyChildClass.r").exists());
+    }
+
+    @Test(groups = {"v11"})
+    public void test95() {
+        configureProject(getBaseDir() + "test95/build.xml");
+        expectBuildException("test1", "Procedure");
+        expectBuildException("test2", "Parameter");
     }
 
     static final class Test80LineProcessor implements LineProcessor<Boolean> {

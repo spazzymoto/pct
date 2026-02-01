@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -108,7 +108,9 @@ public abstract class PCT extends Task {
             throw new BuildException("Unable to read DLC version file in '" + dlcHome.toString() + "'");
         }
 
-        if (version.compareTo(new DLCVersion(12, 8, "0")) >= 0)
+        if (version.compareTo(new DLCVersion(13, 0, "0")) >= 0)
+            this.pp = new ProgressV13();
+        else if (version.compareTo(new DLCVersion(12, 8, "0")) >= 0)
             this.pp = new ProgressV128();
         else if (version.compareTo(new DLCVersion(12, 4, "0")) >= 0)
             this.pp = new ProgressV124();
@@ -130,8 +132,10 @@ public abstract class PCT extends Task {
             this.pp = new ProgressV10();
         else
             throw new BuildException("Invalid Progress version : " + version.toString());
-        log("Using object : " + pp.getClass().getName(), Project.MSG_VERBOSE);
+        log("Using object : " + pp.getClass().getName(), Project.MSG_VERBOSE);  
+    }
 
+    public void setJavaEnv() {
         if (pp.externalJDK()) {
             try (InputStream input = new FileInputStream (new File(dlcHome, "properties/java.properties"))) {
                 Properties props = new Properties();
@@ -143,8 +147,7 @@ public abstract class PCT extends Task {
                     jdk  = new File(str);
                     jre = new File(jdk, "jre");
                     if (!jdk.exists())
-                        log("JAVA_HOME '" + jdk.getAbsolutePath() + "' directory doesn't exist")
-                        ;
+                        log("JAVA_HOME '" + jdk.getAbsolutePath() + "' directory doesn't exist");
                 }
             } catch (IOException uncaught) {
                 log("Unable to open file $DLC/properties/java.properties", Project.MSG_ERR);
@@ -153,7 +156,6 @@ public abstract class PCT extends Task {
             jdk = new File(dlcHome, "jdk");
             jre = new File(dlcHome, "jre");
         }
-        
     }
 
     public void setPdsHome(File pdsHome) {

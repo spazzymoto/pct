@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -282,7 +282,7 @@ public class PCTLibrary extends PCT {
                 } catch (IOException caught) {
                     log(MessageFormat.format(Messages.getString("PCTLibrary.5"),
                             sharedFile.getAbsolutePath()), Project.MSG_VERBOSE);
-                    throw new BuildException("Can't create memory-mapped library", caught);
+                    throw new BuildException("Cannot create memory-mapped library", caught);
                 }
                 log(MessageFormat
                         .format(Messages.getString("PCTLibrary.8"), sharedFile.getAbsolutePath()));

@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -169,7 +169,7 @@ public class Profiler {
             throw new BuildException("Only outputDir can be set for multi-threaded tasks");
         if (listings != null) {
             if (!listings.exists() || !listings.isDirectory())
-                throw new BuildException("Listing dir doesn't exist or is not a directory");
+                throw new BuildException("Listing directory does not exist or is not a directory");
         }
     }
 }

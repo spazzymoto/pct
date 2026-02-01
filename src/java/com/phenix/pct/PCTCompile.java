@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -78,12 +78,12 @@ public class PCTCompile extends PCTRun {
 
     @Override
     public void setProcedure(String procedure) {
-        throw new BuildException("Can't set procedure attribute here");
+        throw new BuildException("Cannot set procedure attribute here");
     }
 
     @Override
     public void setParameter(String param) {
-        throw new BuildException("Can't set parameter attribute here");
+        throw new BuildException("Cannot set parameter attribute here");
     }
 
     /**

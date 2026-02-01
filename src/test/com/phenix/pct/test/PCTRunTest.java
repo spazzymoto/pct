@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -480,7 +480,7 @@ public class PCTRunTest extends BuildFileTestNg {
     public void test52() {
         configureProject("PCTRun/test52/build.xml");
         expectLog("test1", "----");
-        expectLog("test2", "-- --");
+        expectLog("test2", "----");
         expectLog("test3", "--xx--");
     }
 
@@ -567,5 +567,30 @@ public class PCTRunTest extends BuildFileTestNg {
         String[] list3 = new File("PCTRun/test56/profiler3").list();
         assertEquals(list3.length, 1);
         assertTrue(list3[0].endsWith(".prof"));
+    }
+
+    @Test(groups = {"v11", "win"})
+    public void test57() {
+        // Case sensitive classes is only relevant on Windows
+        DLCVersion version = DLCVersion.getObject(new File(System.getProperty("DLC")));
+        boolean isOE13 = version.getMajorVersion() >= 13;
+        int patchLevel = 0;
+        try {
+            patchLevel = Integer.parseInt(version.getMaintenanceVersion());
+        } catch (NumberFormatException uncaught) {
+            // Nothing
+        }
+        boolean isOE1287 = (version.getMajorVersion() == 12) && (version.getMinorVersion() >= 8) && (patchLevel >= 7);
+
+        configureProject("PCTRun/test57/build.xml");
+        if (isOE13 || isOE1287) { // Same behavior on 12.8 and 13.0 on Windows for now
+            expectBuildException("test1", "Supposed to fail");
+            executeTarget("test2");
+            executeTarget("test3"); // 13.0 on Windows, default value is still 0
+        } else {
+            executeTarget("test1");
+            executeTarget("test2");
+            executeTarget("test3");
+        }
     }
 }

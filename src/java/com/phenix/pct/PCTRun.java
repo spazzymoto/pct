@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -269,6 +269,11 @@ public class PCTRun extends PCT implements IRunAttributes {
     @Override
     public void setClrnetcore(boolean clrnetcore) {
         runAttributes.setClrnetcore(clrnetcore);
+    }
+
+    @Override
+    public void setCaseSensitiveClasses(boolean caseSensitive) {
+        runAttributes.setCaseSensitiveClasses(caseSensitive);
     }
 
     @Override

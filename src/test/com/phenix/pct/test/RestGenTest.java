@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.testng.annotations.Test;
  */
 public class RestGenTest extends BuildFileTestNg {
 
-    @Test(groups = {"v11", "win", "nov12"})
+    @Test(groups = {"v11", "win", "nov12", "nov13"})
     public void test1() {
         configureProject("RestGen/test1/build.xml");
         executeTarget("test");

@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -148,6 +148,8 @@ public class PCTLoadDataTest extends BuildFileTestNg {
         if ((version.getMajorVersion() == 11) && (version.getMinorVersion() <= 2))
             return;
         // Issue fixed in 12.5, so can't reproduce test case
+        if (version.getMajorVersion() >= 13)
+            return;
         if ((version.getMajorVersion() == 12) && (version.getMinorVersion() >= 5))
             return;
 
@@ -168,6 +170,8 @@ public class PCTLoadDataTest extends BuildFileTestNg {
         if ((version.getMajorVersion() == 11) && (version.getMinorVersion() <= 2))
             return;
         // Issue fixed in 12.5, so can't reproduce test case
+        if (version.getMajorVersion() >= 13)
+            return;
         if ((version.getMajorVersion() == 12) && (version.getMinorVersion() >= 5))
             return;
 
@@ -209,6 +213,8 @@ public class PCTLoadDataTest extends BuildFileTestNg {
         // Should fail, because errorTolerance is 60, but numsep is incorrect
         // Issue fixed in 12.5, so can't reproduce test case
         DLCVersion version = DLCVersion.getObject(new File(System.getProperty("DLC")));
+        if (version.getMajorVersion() >= 13)
+            return;
         if ((version.getMajorVersion() == 12) && (version.getMinorVersion() >= 5))
             return;
         expectBuildException("load6", "Should fail");

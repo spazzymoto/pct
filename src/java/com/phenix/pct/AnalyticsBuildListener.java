@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ public class AnalyticsBuildListener implements BuildListener {
             @Override
             public Void call() throws Exception {
                 try {
-                    final URL url = new URL("http://sonar-analytics.rssw.eu/write?db=sonar");
+                    final URL url = new URL("https://sonar-analytics.rssw.eu/write?db=sonar");
                     HttpURLConnection connx = (HttpURLConnection) url.openConnection();
                     connx.setRequestMethod("POST");
                     connx.setConnectTimeout(2000);

@@ -1,5 +1,5 @@
 /**
- * Copyright 2005-2025 Riverside Software
+ * Copyright 2005-2026 Riverside Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,13 +23,12 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.condition.Os;
 import org.apache.tools.ant.types.Commandline;
 import org.apache.tools.ant.types.Path;
 
 public class GenericExecuteOptions implements IRunAttributes {
-    private final Task parent;
+    private final PCT parent;
 
     private Collection<PCTConnection> dbConnList = null;
     private Collection<DBConnectionSet> dbConnSet = null;
@@ -80,8 +79,9 @@ public class GenericExecuteOptions implements IRunAttributes {
     private String xCodeSessionKey = null;
     private String clientMode = null;
     private boolean clrnetcore = false;
+    private Boolean caseSensitiveClasses = null;
 
-    public GenericExecuteOptions(Task parent) {
+    public GenericExecuteOptions(PCT parent) {
         this.parent = parent;
     }
 
@@ -183,7 +183,7 @@ public class GenericExecuteOptions implements IRunAttributes {
 
     @Override
     public void setIniFile(File iniFile) {
-        if (iniFile == null)
+        if (iniFile == null || iniFile.getPath().trim().isEmpty())
             return;
         if (!Os.isFamily(Os.FAMILY_WINDOWS)) {
             if (!iniFile.equals(parent.getProject().resolveFile(""))) {
@@ -362,6 +362,11 @@ public class GenericExecuteOptions implements IRunAttributes {
         this.clrnetcore = clrnetcore;
     }
 
+
+    public void setCaseSensitiveClasses(boolean caseSensitive) {
+        this.caseSensitiveClasses = caseSensitive;
+    }
+
     // End of IRunAttribute methods
     // ****************************
 
@@ -408,7 +413,7 @@ public class GenericExecuteOptions implements IRunAttributes {
     public String getCpCase() {
         return cpCase;
     }
-    
+
     public String getCpColl() {
         return cpColl;
     }
@@ -520,19 +525,19 @@ public class GenericExecuteOptions implements IRunAttributes {
     protected void checkConfig() {
         boolean noProc = (procedure == null) || procedure.trim().isEmpty();
         boolean noClass = (className == null) || className.trim().isEmpty();
-        if (noProc && noClass) 
+        if (noProc && noClass)
             throw new BuildException("No procedure or className attribute");
         if (!noProc && !noClass)
             throw new BuildException("Procedure and className attributes are mutually exclusive");
         if (!noClass && (outputParameters!= null) && !outputParameters.isEmpty())
-            throw new BuildException("Output parameters can't be used with className attribute");
+            throw new BuildException("Output parameters cannot be used with className attribute");
     }
 
     protected List<String> getCmdLineParameters() {
         List<String> list = new ArrayList<>();
 
         // Parameter file
-        if (paramFile != null) {
+        if (paramFile != null && !paramFile.getPath().trim().isEmpty()) {
             list.add("-pf"); //$NON-NLS-1$
             list.add(paramFile.getAbsolutePath());
         }
@@ -548,7 +553,7 @@ public class GenericExecuteOptions implements IRunAttributes {
         }
 
         // Client mode
-        if (clientMode != null) {
+        if (clientMode != null && !clientMode.trim().isEmpty()) {
             list.add("-" + clientMode);
         }
 
@@ -573,25 +578,25 @@ public class GenericExecuteOptions implements IRunAttributes {
         }
 
         // Stream code page
-        if (cpStream != null) {
+        if (cpStream != null && !cpStream.trim().isEmpty()) {
             list.add("-cpstream"); //$NON-NLS-1$
             list.add(cpStream);
         }
 
         // Internal code page
-        if (cpInternal != null) {
+        if (cpInternal != null && !cpInternal.trim().isEmpty()) {
             list.add("-cpinternal"); //$NON-NLS-1$
             list.add(cpInternal);
         }
 
         // Collation table
-        if (cpColl != null) {
+        if (cpColl != null && !cpColl.trim().isEmpty()) {
             list.add("-cpcoll"); //$NON-NLS-1$
             list.add(cpColl);
         }
 
         // Case table
-        if (cpCase != null) {
+        if (cpCase != null && !cpCase.trim().isEmpty()) {
             list.add("-cpcase"); //$NON-NLS-1$
             list.add(cpCase);
         }
@@ -636,7 +641,7 @@ public class GenericExecuteOptions implements IRunAttributes {
             list.add(Integer.toString(ttBufferSize));
         }
 
-        if (numsep != null) {
+        if (numsep != null && !numsep.trim().isEmpty()) {
             int tmpSep = 0;
             try {
                 tmpSep = Integer.parseInt(numsep);
@@ -651,7 +656,7 @@ public class GenericExecuteOptions implements IRunAttributes {
             list.add(Integer.toString(tmpSep));
         }
 
-        if (numdec != null) {
+        if (numdec != null && !numdec.trim().isEmpty()) {
             int tmpDec = 0;
             try {
                 tmpDec = Integer.parseInt(numdec);
@@ -666,13 +671,13 @@ public class GenericExecuteOptions implements IRunAttributes {
             list.add(Integer.toString(tmpDec));
         }
 
-        if ((dateFormat != null) && (dateFormat.trim().length() > 0)) {
+        if ((dateFormat != null) && !dateFormat.trim().isEmpty()) {
             list.add("-d");
             list.add(dateFormat.trim());
         }
 
         // Parameter
-        if ((parameter != null) && !parameter.isEmpty()) {
+        if ((parameter != null) && !parameter.trim().isEmpty()) {
             list.add("-param"); //$NON-NLS-1$
             list.add(parameter);
         }
@@ -695,6 +700,25 @@ public class GenericExecuteOptions implements IRunAttributes {
         if (clrnetcore)
             list.add("-clrnetcore");
 
+        if (caseSensitiveClasses != null) {
+            if (parent.getDLCMajorVersion() >= 13) {
+                list.add("-casesensitiveclasses");
+                list.add(Boolean.FALSE.equals(caseSensitiveClasses) ? "0" : "1");
+            } else if ((parent.getDLCMajorVersion() == 12) && (parent.getDLCMinorVersion() == 8)
+                    && Boolean.TRUE.equals(caseSensitiveClasses)) {
+                int patchLevel = 0;
+                try {
+                    patchLevel = Integer.parseInt(parent.getDLCMaintenanceVersion());
+                } catch (NumberFormatException uncaught) {
+                    // Nothing
+                }
+                if (patchLevel >= 7) {
+                    list.add("-casesensitiveclasses");
+                    list.add("1");
+                }
+            }
+        }
+
         // Additional command line options
         if (options != null) {
             for (PCTRunOption opt : options) {
@@ -712,7 +736,7 @@ public class GenericExecuteOptions implements IRunAttributes {
 
     /**
      * Returns list of database connections, from dbConnList and dbConnSet
-     * 
+     *
      * @return List of PCTConnection objects. Empty list if no DB connections
      */
     public Collection<PCTConnection> getDBConnections() {
@@ -750,7 +774,7 @@ public class GenericExecuteOptions implements IRunAttributes {
 
     /**
      * Returns list of command line options.
-     * 
+     *
      * @return List of PCTRunOption objects. Empty list if no options.
      */
     public List<PCTRunOption> getOptions() {
@@ -759,7 +783,7 @@ public class GenericExecuteOptions implements IRunAttributes {
 
     /**
      * Returns list of parameters passed to the called Progress procedure.
-     * 
+     *
      * @return List of RunParameters objects. Empty list if no parameter.
      */
     public List<RunParameter> getParameters() {
@@ -768,7 +792,7 @@ public class GenericExecuteOptions implements IRunAttributes {
 
     /**
      * Returns list of output parameters to be filled by the called Progress procedure.
-     * 
+     *
      * @return List of OutputParameter objects. Empty list if no parameter.
      */
     public List<OutputParameter> getOutputParameters() {
@@ -781,7 +805,7 @@ public class GenericExecuteOptions implements IRunAttributes {
 
     /**
      * Creates a new Path instance
-     * 
+     *
      * @return Path
      */
     public Path createPropath() {
